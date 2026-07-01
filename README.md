@@ -144,6 +144,31 @@ Run the backend (`uvicorn backend.main:app --reload`) alongside it. Pages:
 | `/provider` | Provider portal with AI pre-visit summaries |
 | `/accessibility` | Voice control, TTS, STT, large text, high contrast |
 
+## Deploy (GitHub Pages + Render)
+
+GitHub Pages hosts static files only, so the React frontend goes on Pages and the
+Python backend goes on Render (free). Steps:
+
+**1. Backend → Render**
+1. Push this repo to GitHub (done).
+2. On [render.com](https://render.com): **New + → Blueprint**, connect this repo.
+   Render reads `render.yaml` and creates the `sanadi-ai-backend` web service.
+3. In the service's **Environment** tab, set `GEMINI_API_KEY` to your key.
+4. Deploy. Copy the service URL, e.g. `https://sanadi-ai-backend.onrender.com`.
+   (Free instances sleep when idle; the first request after a nap takes ~30s.)
+
+**2. Frontend → GitHub Pages**
+1. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+2. Repo **Settings → Secrets and variables → Actions → Variables → New variable**:
+   name `VITE_API_URL`, value = your Render URL (no trailing slash).
+3. Re-run the **Deploy frontend to GitHub Pages** workflow (Actions tab → Run
+   workflow), or push any commit. It builds `frontend/` and publishes to Pages.
+4. Your site: `https://<username>.github.io/Sanadi-AI/`
+
+The Vite base path is `/Sanadi-AI/` and routing uses `HashRouter`, so deep links
+and refreshes work on Pages. If you rename the repo, update `base` in
+`frontend/vite.config.js`.
+
 ## Notes & next steps
 
 - Auth issues JWTs but routes aren't yet protected by a dependency — add a

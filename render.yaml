@@ -1,0 +1,27 @@
+# Render.com Blueprint — deploys the Sanadi AI backend as a free web service.
+# In Render: New + → "Blueprint" → connect this repo. Then set GEMINI_API_KEY
+# in the service's Environment tab (it is marked sync:false so it is never
+# stored in the repo).
+services:
+  - type: web
+    name: sanadi-ai-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: GEMINI_API_KEY
+        sync: false          # paste your key in the Render dashboard
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: SINGLE_CALL_MODE
+        value: "true"
+      - key: DEBUG
+        value: "false"
+      - key: SEED_ON_START
+        value: "true"
+      # ALLOWED_ORIGINS defaults to "*" (fine for a public demo). To restrict,
+      # set it to your Pages origin, e.g. https://khadejaahmedkz.github.io

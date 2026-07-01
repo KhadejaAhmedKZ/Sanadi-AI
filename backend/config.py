@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     app_name: str = "Sanadi AI"
     debug: bool = True
     database_url: str = "sqlite:///./sanadi.db"
+    # Comma-separated list of allowed CORS origins, or "*" for any.
+    allowed_origins: str = "*"
+    # Seed demo patients automatically on startup if the DB is empty.
+    seed_on_start: bool = True
 
     # Gemini
     gemini_api_key: str = ""

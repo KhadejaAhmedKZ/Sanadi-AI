@@ -30,12 +30,32 @@ logger = get_logger("sanadi.main")
 async def lifespan(app: FastAPI):
     configure_logging()
     init_db()
+    if settings.seed_on_start:
+        _maybe_seed()
     logger.info(
         "Sanadi AI starting — Gemini %s",
         "online" if gemini.online else "OFFLINE (no API key)",
     )
     yield
     logger.info("Sanadi AI shutting down.")
+
+
+def _maybe_seed() -> None:
+    """Seed demo data if there are no users yet (safe on fresh hosts)."""
+    from backend.database import SessionLocal
+    from backend.models import User
+
+    db = SessionLocal()
+    try:
+        if db.query(User).count() == 0:
+            from backend.seed import seed
+
+            seed()
+            logger.info("Seeded demo data on startup.")
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Startup seed skipped: %s", exc)
+    finally:
+        db.close()
 
 
 app = FastAPI(
@@ -45,10 +65,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — open in dev; lock this down for production.
+# CORS — configurable via ALLOWED_ORIGINS ("*" or comma-separated list).
+_origins = (
+    ["*"]
+    if settings.allowed_origins.strip() == "*"
+    else [o.strip() for o in settings.allowed_origins.split(",") if o.strip()]
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.debug else [],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
