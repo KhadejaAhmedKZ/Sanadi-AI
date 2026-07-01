@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     # Gemini
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
+    # Single-call mode collapses the whole multi-agent pipeline into ONE Gemini
+    # request per message. Essential on the free tier (5 requests/min). Set to
+    # false to use the full fan-out pipeline (needs a higher quota / paid tier).
+    single_call_mode: bool = True
 
     # Auth
     jwt_secret: str = "change_me"

@@ -150,6 +150,11 @@ Run the backend (`uvicorn backend.main:app --reload`) alongside it. Pages:
   `require_user` dependency before production.
 - `bcrypt` is pinned to 4.2.1 because passlib 1.7.4 breaks on bcrypt 5.x.
 - Voice features use the browser Web Speech API (best in Chrome/Edge).
+- **Free Gemini tier = 5 requests/min.** By default `SINGLE_CALL_MODE=true`
+  collapses the whole multi-agent pipeline into ONE Gemini call per message
+  (safety + routing + reply + booking/symptom actions) so the free tier works.
+  Set `SINGLE_CALL_MODE=false` in `.env` to use the full fan-out pipeline on a
+  paid/higher-quota key. The emergency safety net runs offline (zero API calls).
 - The `vr/` Unity module from the concept doc is a future native companion to the
   in-browser VR rehab experience.
 
