@@ -1,0 +1,72 @@
+/* ---------- Hands-free Face Control ---------- */
+
+/* Launcher button (bottom-right, on every page) */
+.fc-launcher {
+  position: fixed; right: 18px; bottom: 18px; z-index: 900;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--brand); color: #fff; border: none; border-radius: 999px;
+  padding: 12px 18px; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+  box-shadow: 0 10px 26px rgba(8, 145, 178, 0.35);
+}
+.fc-launcher:hover { background: var(--brand-dark); }
+
+/* On-screen cursor driven by head movement */
+.fc-cursor {
+  position: fixed; left: 0; top: 0; z-index: 2147483000;
+  width: 40px; height: 40px; pointer-events: none; will-change: transform;
+}
+.fc-cursor-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 3px solid var(--brand); box-shadow: 0 0 0 2px rgba(255,255,255,.9), 0 0 14px rgba(8,145,178,.6);
+}
+.fc-cursor-dot {
+  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--danger); transform: translate(-50%, -50%);
+}
+.fc-cursor.clicking .fc-cursor-ring {
+  animation: fc-tap 0.26s ease-out;
+  border-color: var(--health);
+}
+@keyframes fc-tap {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.55); border-color: var(--health); }
+  100% { transform: scale(1); }
+}
+
+/* Camera preview (mirrored) */
+.fc-video {
+  position: fixed; right: 18px; bottom: 150px; z-index: 901;
+  width: 200px; height: 150px; object-fit: cover; border-radius: 12px;
+  transform: scaleX(-1); border: 3px solid var(--brand);
+  box-shadow: var(--shadow-lg); background: #000;
+}
+.fc-video.hidden { display: none; }
+
+/* Control panel */
+.fc-panel {
+  position: fixed; right: 18px; bottom: 18px; z-index: 902;
+  width: 250px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px; box-shadow: var(--shadow-lg);
+}
+.fc-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.fc-status { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.fc-status.active { color: var(--health); }
+.fc-status.loading { color: var(--warn); }
+.fc-status.error { color: var(--danger); }
+.fc-hint { font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; line-height: 1.4; }
+.fc-error { font-size: 0.85rem; color: var(--danger-dark); background: #fee2e2; padding: 10px; border-radius: 10px; }
+
+.fc-meter-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.fc-meter-label { font-size: 0.72rem; color: var(--muted); width: 34px; }
+.fc-meter { flex: 1; height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.fc-meter-fill { height: 100%; transition: width .06s linear; }
+
+.fc-slider { display: block; margin-bottom: 10px; }
+.fc-slider span { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
+.fc-slider input { width: 100%; }
+
+.fc-actions { display: flex; gap: 8px; margin-top: 4px; }
+.fc-actions .btn { flex: 1; }
+
+/* High-contrast tweaks */
+body.a11y-high-contrast .fc-cursor-ring { border-color: #22d3ee; box-shadow: 0 0 0 2px #000, 0 0 16px #22d3ee; }

@@ -54,6 +54,32 @@ export default function Accessibility() {
       </div>
 
       <div className="card">
+        <h3 className="card-title">👁️ Hands-free Face Control</h3>
+        <p className="card-sub">
+          For limited hand/arm mobility — steer a pointer with your <b>head</b> and
+          <b> blink</b> to tap. Runs entirely in your browser; the camera video never
+          leaves your device.
+        </p>
+        <Toggle
+          on={settings.faceControl}
+          onClick={() => toggle("faceControl")}
+          icon="👁️"
+          title="Enable face control"
+          desc="Head-move the pointer, blink to click (asks for camera access)"
+        />
+        <ul className="feature-list mt">
+          <li>Move your head to move the on-screen pointer</li>
+          <li>Blink deliberately to tap the item under the pointer</li>
+          <li>Adjust head sensitivity & blink ease from the control panel</li>
+          <li>Works on any page — a floating panel appears when active</li>
+        </ul>
+        <p className="muted" style={{ fontSize: ".82rem" }}>
+          Best in Chrome, Edge or Safari on a device with a webcam. Good lighting
+          and a centered face improve tracking.
+        </p>
+      </div>
+
+      <div className="card">
         <h3 className="card-title">🎤 Speech-to-text</h3>
         <p className="card-sub">
           {voice.supported ? "Tap the mic and speak — your words appear below." : "Your browser doesn't support speech recognition."}

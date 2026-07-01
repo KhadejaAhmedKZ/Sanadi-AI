@@ -28,6 +28,14 @@ export default function AccessibilityBar() {
       >
         🔊
       </button>
+      <button
+        className={settings.faceControl ? "on" : ""}
+        onClick={() => toggle("faceControl")}
+        title="Hands-free face control (head + blink)"
+        aria-pressed={settings.faceControl}
+      >
+        👁️
+      </button>
     </div>
   );
 }
