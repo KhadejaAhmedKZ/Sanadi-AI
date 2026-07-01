@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import App from "./App.jsx";
 import FaceControl from "./components/FaceControl.jsx";
+import SpeechAnnouncer from "./components/SpeechAnnouncer.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { AccessibilityProvider } from "./context/AccessibilityContext.jsx";
 import "./styles/theme.css";
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <AccessibilityProvider>
           <App />
           <FaceControl />
+          <SpeechAnnouncer />
         </AccessibilityProvider>
       </AuthProvider>
     </HashRouter>

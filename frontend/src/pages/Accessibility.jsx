@@ -54,6 +54,31 @@ export default function Accessibility() {
       </div>
 
       <div className="card">
+        <h3 className="card-title">📢 Screen Reader Mode</h3>
+        <p className="card-sub">
+          For blind and low-vision users — Sanadi speaks the interface aloud so you
+          can use it without seeing the screen.
+        </p>
+        <Toggle
+          on={settings.screenReader}
+          onClick={() => toggle("screenReader")}
+          icon="📢"
+          title="Enable screen reader mode"
+          desc="Announces pages and reads buttons, links and fields aloud"
+        />
+        <ul className="feature-list mt">
+          <li>Announces each page when you navigate</li>
+          <li>Reads any button, link or field when you focus it (Tab key) or point at it</li>
+          <li>AI chat replies are read aloud automatically</li>
+          <li>A “Read page” button reads the whole page on demand</li>
+        </ul>
+        <p className="muted" style={{ fontSize: ".82rem" }}>
+          Tip: use the <b>Tab</b> key to move between items — each one is read aloud as
+          you land on it. This works alongside your device’s built-in screen reader.
+        </p>
+      </div>
+
+      <div className="card">
         <h3 className="card-title">👁️ Hands-free Face Control</h3>
         <p className="card-sub">
           For limited hand/arm mobility — steer a pointer with your <b>head</b> and

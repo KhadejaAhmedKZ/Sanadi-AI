@@ -66,9 +66,12 @@ export default function Login() {
           <p className="auth-switch">
             New here? <Link to="/register">Create an account</Link>
           </p>
-          <p className="muted" style={{ fontSize: ".8rem", marginTop: 20 }}>
-            Demo: sara@example.com / demo1234
-          </p>
+          <div className="muted" style={{ fontSize: ".8rem", marginTop: 20, lineHeight: 1.7 }}>
+            <strong>Demo accounts</strong> (password: demo1234)
+            <div>👤 Patient — sara@example.com</div>
+            <div>👨‍👩‍👧 Caregiver — care@example.com</div>
+            <div>👨‍⚕️ Provider — doctor@example.com</div>
+          </div>
         </div>
       </div>
     </div>

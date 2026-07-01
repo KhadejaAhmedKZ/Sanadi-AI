@@ -13,7 +13,7 @@ const SCENE_BG = {
 
 export default function Rehab() {
   const { user } = useAuth();
-  const patientId = user?.role === "patient" ? user.id : 1;
+  const patientId = user.id;
   const [exercises, setExercises] = useState([]);
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);

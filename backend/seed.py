@@ -43,9 +43,50 @@ def seed() -> None:
                     db, patient.id, sym["description"], sym.get("pain_level")
                 )
             print(f"✓ Seeded patient {patient.name} (id={patient.id})")
+
+        _seed_staff(db)
     finally:
         db.close()
-    print("\nDone. Log in with e.g. sara@example.com / demo1234")
+    print(
+        "\nDone. Demo logins (password demo1234):\n"
+        "  Patient:   sara@example.com\n"
+        "  Caregiver: care@example.com\n"
+        "  Provider:  doctor@example.com"
+    )
+
+
+def _seed_staff(db) -> None:
+    """Create a demo caregiver + provider and link the caregiver to a patient."""
+    # Provider
+    if not db.query(User).filter(User.email == "doctor@example.com").first():
+        provider = User(
+            name="Dr. Layla Hassan",
+            email="doctor@example.com",
+            hashed_password=hash_password("demo1234"),
+            role=UserRole.provider,
+        )
+        db.add(provider)
+        db.commit()
+        print("✓ Seeded provider Dr. Layla Hassan")
+
+    # Caregiver, linked to the first patient (Sara) with full scopes.
+    if not db.query(User).filter(User.email == "care@example.com").first():
+        caregiver = User(
+            name="Omar Ahmed",
+            email="care@example.com",
+            hashed_password=hash_password("demo1234"),
+            role=UserRole.caregiver,
+        )
+        db.add(caregiver)
+        db.commit()
+        db.refresh(caregiver)
+        sara = db.query(User).filter(User.email == "sara@example.com").first()
+        if sara:
+            patient_service.link_caregiver(
+                db, caregiver.id, sara.id,
+                ["medications", "appointments", "symptoms", "safety"],
+            )
+        print("✓ Seeded caregiver Omar Ahmed (linked to Sara)")
 
 
 if __name__ == "__main__":

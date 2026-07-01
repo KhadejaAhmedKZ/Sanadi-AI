@@ -36,6 +36,14 @@ export default function AccessibilityBar() {
       >
         👁️
       </button>
+      <button
+        className={settings.screenReader ? "on" : ""}
+        onClick={() => toggle("screenReader")}
+        title="Screen reader (speak the page aloud)"
+        aria-pressed={settings.screenReader}
+      >
+        📢
+      </button>
     </div>
   );
 }

@@ -70,3 +70,12 @@
 
 /* High-contrast tweaks */
 body.a11y-high-contrast .fc-cursor-ring { border-color: #22d3ee; box-shadow: 0 0 0 2px #000, 0 0 16px #22d3ee; }
+
+/* ---------- Screen reader control bar ---------- */
+.sr-bar {
+  position: fixed; left: 18px; bottom: 18px; z-index: 903;
+  display: flex; gap: 8px; align-items: center;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 6px 8px; box-shadow: var(--shadow-lg);
+}
+

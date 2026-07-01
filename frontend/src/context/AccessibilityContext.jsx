@@ -7,6 +7,7 @@ const DEFAULTS = {
   highContrast: false,
   voiceEnabled: false, // auto text-to-speech of assistant replies
   faceControl: false, // hands-free head-cursor + blink-to-click
+  screenReader: false, // speak page + whatever the user focuses/points at
 };
 
 export function AccessibilityProvider({ children }) {

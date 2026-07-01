@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 import { StatCard, Loader, ErrorNote, EmptyState } from "../components/ui.jsx";
 
 const SCOPES = ["medications", "appointments", "symptoms", "safety"];
 
 export default function CaregiverDashboard() {
-  // Demo: caregiver views patient #1 (Sara). In production the link would be
-  // established via the patient's permission grant.
-  const caregiverId = 99;
-  const patientId = 1;
+  const { user } = useAuth();
+  const caregiverId = user.id; // the logged-in caregiver
+  // The patient this caregiver supports (by their patient ID). Demo default: 1.
+  const [patientId, setPatientId] = useState(1);
 
   const [overview, setOverview] = useState(null);
   const [notifs, setNotifs] = useState([]);
@@ -30,7 +31,7 @@ export default function CaregiverDashboard() {
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   }
-  useEffect(() => { loadOverview(); }, []);
+  useEffect(() => { loadOverview(); }, [patientId]);
 
   async function link() {
     setLinking(true);
@@ -53,8 +54,19 @@ export default function CaregiverDashboard() {
       <ErrorNote message={error} />
 
       <div className="card">
-        <h3 className="card-title">Permission grant</h3>
-        <p className="card-sub">Simulate the patient granting you access scopes</p>
+        <h3 className="card-title">Connect to a patient</h3>
+        <p className="card-sub">
+          Enter the patient's ID and the access they've granted you (demo patient ID: 1 or 2)
+        </p>
+        <label className="field" style={{ maxWidth: 220 }}>
+          <span>Patient ID</span>
+          <input
+            type="number"
+            min="1"
+            value={patientId}
+            onChange={(e) => setPatientId(Number(e.target.value) || 1)}
+          />
+        </label>
         <div className="row wrap">
           {SCOPES.map((s) => (
             <label key={s} className="badge gray" style={{ padding: "8px 14px", cursor: "pointer" }}>

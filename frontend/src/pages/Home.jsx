@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 import { StatCard, Loader } from "../components/ui.jsx";
@@ -15,11 +15,16 @@ export default function Home() {
   const { user } = useAuth();
   const [dash, setDash] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isPatient = user?.role === "patient";
 
   useEffect(() => {
-    if (user?.role !== "patient") { setLoading(false); return; }
+    if (!isPatient) { setLoading(false); return; }
     api.dashboard(user.id).then(setDash).catch(() => {}).finally(() => setLoading(false));
-  }, [user]);
+  }, [user, isPatient]);
+
+  // Caregivers and providers have their own home — send them there.
+  if (user?.role === "caregiver") return <Navigate to="/caregiver" replace />;
+  if (user?.role === "provider") return <Navigate to="/provider" replace />;
 
   const firstName = user?.name?.split(" ")[0] || "there";
 
@@ -66,12 +71,26 @@ export default function Home() {
       <div className="grid cols-2">
         <div className="card">
           <h3 className="card-title">Today's plan</h3>
-          <p className="card-sub">Your personalized health tasks</p>
+          <p className="card-sub">Based on your current medications & appointments</p>
           <ul className="feature-list">
-            <li>💊 Take medications on schedule</li>
-            <li>🚶 Complete today's rehab exercise</li>
-            <li>💧 Stay hydrated — drink water</li>
-            <li>📅 Review upcoming appointments</li>
+            {dash?.medications?.length ? (
+              dash.medications.map((m) => (
+                <li key={m.id}>
+                  💊 {m.name}{m.dosage ? ` (${m.dosage})` : ""}{m.schedule ? ` — ${m.schedule}` : ""}
+                </li>
+              ))
+            ) : (
+              <li>💊 No medications scheduled</li>
+            )}
+            {dash?.appointments?.[0] ? (
+              <li>
+                📅 Next visit: {dash.appointments[0].department} —{" "}
+                {new Date(dash.appointments[0].scheduled_for).toLocaleDateString(undefined, { dateStyle: "medium" })}
+              </li>
+            ) : (
+              <li>📅 No upcoming appointments</li>
+            )}
+            <li>💧 Stay hydrated — drink water regularly</li>
           </ul>
         </div>
         <div className="card">

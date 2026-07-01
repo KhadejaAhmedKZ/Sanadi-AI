@@ -1,23 +1,48 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 
-const MAIN = [
-  { to: "/", icon: "🏠", label: "Home", end: true },
-  { to: "/chat", icon: "💬", label: "AI Assistant" },
-  { to: "/dashboard", icon: "📋", label: "My Health" },
-  { to: "/appointments", icon: "📅", label: "Appointments" },
-  { to: "/medications", icon: "💊", label: "Medications" },
-  { to: "/analytics", icon: "📊", label: "Analytics" },
-];
-
-const CARE = [
-  { to: "/care", icon: "🏥", label: "Specialized Care" },
-  { to: "/care/rehabilitation", icon: "🥽", label: "VR Rehab" },
-];
-
-const ROLES = [
-  { to: "/caregiver", icon: "👨‍👩‍👧", label: "Caregiver Portal" },
-  { to: "/provider", icon: "👨‍⚕️", label: "Provider Portal" },
-];
+// Navigation is role-aware: each user only sees the sections meant for them.
+const NAV = {
+  patient: [
+    {
+      label: "Main",
+      items: [
+        { to: "/", icon: "🏠", label: "Home", end: true },
+        { to: "/chat", icon: "💬", label: "AI Assistant" },
+        { to: "/dashboard", icon: "📋", label: "My Health" },
+        { to: "/appointments", icon: "📅", label: "Appointments" },
+        { to: "/medications", icon: "💊", label: "Medications" },
+        { to: "/analytics", icon: "📊", label: "Analytics" },
+      ],
+    },
+    {
+      label: "Care Modules",
+      items: [
+        { to: "/care", icon: "🏥", label: "Specialized Care" },
+        { to: "/care/rehabilitation", icon: "🥽", label: "VR Rehab" },
+      ],
+    },
+  ],
+  caregiver: [
+    {
+      label: "Main",
+      items: [
+        { to: "/", icon: "🏠", label: "Home", end: true },
+        { to: "/caregiver", icon: "👨‍👩‍👧", label: "Caregiver Portal" },
+        { to: "/care", icon: "🏥", label: "Care Guides" },
+      ],
+    },
+  ],
+  provider: [
+    {
+      label: "Main",
+      items: [
+        { to: "/", icon: "🏠", label: "Home", end: true },
+        { to: "/provider", icon: "👨‍⚕️", label: "Provider Portal" },
+      ],
+    },
+  ],
+};
 
 function Item({ to, icon, label, end, onNavigate }) {
   return (
@@ -34,6 +59,9 @@ function Item({ to, icon, label, end, onNavigate }) {
 }
 
 export default function Sidebar({ open, onNavigate }) {
+  const { user } = useAuth();
+  const groups = NAV[user?.role] || NAV.patient;
+
   return (
     <aside className={"sidebar" + (open ? " open" : "")}>
       <div className="brand">
@@ -41,19 +69,13 @@ export default function Sidebar({ open, onNavigate }) {
         <span>Sanadi&nbsp;AI</span>
       </div>
 
-      <div className="nav-group-label">Main</div>
-      {MAIN.map((i) => (
-        <Item key={i.to} {...i} onNavigate={onNavigate} />
-      ))}
-
-      <div className="nav-group-label">Care Modules</div>
-      {CARE.map((i) => (
-        <Item key={i.to} {...i} onNavigate={onNavigate} />
-      ))}
-
-      <div className="nav-group-label">Portals</div>
-      {ROLES.map((i) => (
-        <Item key={i.to} {...i} onNavigate={onNavigate} />
+      {groups.map((group) => (
+        <div key={group.label}>
+          <div className="nav-group-label">{group.label}</div>
+          {group.items.map((i) => (
+            <Item key={i.to} {...i} onNavigate={onNavigate} />
+          ))}
+        </div>
       ))}
 
       <div className="nav-group-label">Settings</div>

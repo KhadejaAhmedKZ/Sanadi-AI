@@ -5,7 +5,7 @@ import { Loader, EmptyState, ErrorNote } from "../components/ui.jsx";
 
 export default function Medications() {
   const { user } = useAuth();
-  const patientId = user?.role === "patient" ? user.id : 1;
+  const patientId = user.id;
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

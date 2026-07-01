@@ -7,7 +7,7 @@ const DEPARTMENTS = ["General", "Cardiology", "Orthopedics", "Physiotherapy", "N
 
 export default function Appointments() {
   const { user } = useAuth();
-  const patientId = user?.role === "patient" ? user.id : 1;
+  const patientId = user.id;
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

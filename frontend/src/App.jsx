@@ -23,6 +23,13 @@ function Protected({ children }) {
   return children;
 }
 
+// Restrict a route to a specific role; others are sent to their own home.
+function RequireRole({ role, children }) {
+  const { user } = useAuth();
+  if (user?.role !== role) return <Navigate to="/" replace />;
+  return children;
+}
+
 export default function App() {
   const { user } = useAuth();
 
@@ -39,15 +46,18 @@ export default function App() {
         }
       >
         <Route path="/" element={<Home />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/dashboard" element={<PatientDashboard />} />
-        <Route path="/caregiver" element={<CaregiverDashboard />} />
-        <Route path="/provider" element={<DoctorDashboard />} />
-        <Route path="/appointments" element={<Appointments />} />
-        <Route path="/medications" element={<Medications />} />
-        <Route path="/analytics" element={<Analytics />} />
+        {/* Patient-only sections */}
+        <Route path="/chat" element={<RequireRole role="patient"><Chat /></RequireRole>} />
+        <Route path="/dashboard" element={<RequireRole role="patient"><PatientDashboard /></RequireRole>} />
+        <Route path="/appointments" element={<RequireRole role="patient"><Appointments /></RequireRole>} />
+        <Route path="/medications" element={<RequireRole role="patient"><Medications /></RequireRole>} />
+        <Route path="/analytics" element={<RequireRole role="patient"><Analytics /></RequireRole>} />
+        <Route path="/care/rehabilitation" element={<RequireRole role="patient"><Rehab /></RequireRole>} />
+        {/* Role portals */}
+        <Route path="/caregiver" element={<RequireRole role="caregiver"><CaregiverDashboard /></RequireRole>} />
+        <Route path="/provider" element={<RequireRole role="provider"><DoctorDashboard /></RequireRole>} />
+        {/* Open to everyone */}
         <Route path="/care" element={<SpecializedCare />} />
-        <Route path="/care/rehabilitation" element={<Rehab />} />
         <Route path="/care/:moduleId" element={<CareModule />} />
         <Route path="/accessibility" element={<Accessibility />} />
       </Route>

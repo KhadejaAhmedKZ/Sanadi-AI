@@ -9,7 +9,7 @@ export default function PatientDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const patientId = user?.role === "patient" ? user.id : 1;
+  const patientId = user.id;
 
   async function load() {
     setLoading(true);

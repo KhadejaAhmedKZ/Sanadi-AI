@@ -5,7 +5,7 @@ import { StatCard, Loader, ErrorNote, EmptyState } from "../components/ui.jsx";
 
 export default function Analytics() {
   const { user } = useAuth();
-  const patientId = user?.role === "patient" ? user.id : 1;
+  const patientId = user.id;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

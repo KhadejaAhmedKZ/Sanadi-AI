@@ -58,7 +58,7 @@ export default function Chat() {
         emergency: res.emergency,
       };
       setMessages((m) => [...m, botMsg]);
-      if (settings.voiceEnabled) speak(res.reply);
+      if (settings.voiceEnabled || settings.screenReader) speak(res.reply);
     } catch (err) {
       setMessages((m) => [...m, { role: "bot", text: `⚠️ ${err.message}`, agents: [] }]);
     } finally {
