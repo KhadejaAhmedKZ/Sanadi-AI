@@ -1,0 +1,91 @@
+/* ---------- Auth pages ---------- */
+.auth-wrap {
+  min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr;
+}
+@media (max-width: 900px) { .auth-wrap { grid-template-columns: 1fr; } .auth-hero { display: none; } }
+.auth-hero {
+  background: linear-gradient(160deg, var(--brand), var(--brand-dark) 60%, #064e5e);
+  color: #eafcff; padding: 60px; display: flex; flex-direction: column; justify-content: center;
+}
+.auth-hero h1 { font-size: 2.5rem; margin: 0 0 12px; }
+.auth-hero p { font-size: 1.1rem; opacity: .92; max-width: 440px; line-height: 1.6; }
+.auth-hero .agents { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; max-width: 460px; }
+.auth-hero .agents span { background: rgba(255,255,255,.14); padding: 8px 12px; border-radius: 999px; font-size: .85rem; }
+.auth-card { display: flex; align-items: center; justify-content: center; padding: 40px; }
+.auth-card .inner { width: 100%; max-width: 400px; }
+.auth-card h2 { margin: 0 0 4px; font-size: 1.6rem; }
+.auth-switch { margin-top: 16px; color: var(--muted); font-size: .92rem; }
+
+/* ---------- Home ---------- */
+.hero-banner {
+  background: linear-gradient(120deg, var(--brand), var(--accent));
+  color: #fff; border-radius: var(--radius); padding: 30px 32px; box-shadow: var(--shadow);
+  display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.hero-banner h1 { margin: 0 0 6px; font-size: 1.7rem; }
+.quick-action {
+  display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  transition: transform .1s, box-shadow .2s; color: var(--text);
+}
+.quick-action:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.quick-action .qa-icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 1.5rem; background: var(--mint); }
+
+/* ---------- Chat ---------- */
+.chat-window { display: flex; flex-direction: column; height: calc(100vh - 66px - 52px); }
+.chat-scroll { flex: 1; overflow-y: auto; padding: 8px 4px; display: flex; flex-direction: column; gap: 14px; }
+.msg { max-width: 75%; padding: 13px 16px; border-radius: 16px; line-height: 1.5; white-space: pre-wrap; box-shadow: var(--shadow-sm); }
+.msg.user { align-self: flex-end; background: var(--brand); color: #fff; border-bottom-right-radius: 4px; }
+.msg.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg.bot.emergency { background: #fef2f2; border-color: #fecaca; }
+.msg .agents-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.chat-input-bar { display: flex; gap: 10px; padding: 14px 4px 4px; border-top: 1px solid var(--border); }
+.chat-input-bar textarea { resize: none; height: 48px; max-height: 120px; }
+.mic-btn { width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); font-size: 1.2rem; }
+.mic-btn.listening { background: var(--danger); color: #fff; border-color: var(--danger); }
+.suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.suggestions button { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; font-size: .85rem; color: var(--brand-dark); }
+.suggestions button:hover { background: var(--surface-2); }
+
+/* ---------- Care modules ---------- */
+.care-card {
+  border-radius: var(--radius); padding: 22px; color: #fff; box-shadow: var(--shadow); position: relative; overflow: hidden;
+  min-height: 190px; display: flex; flex-direction: column; justify-content: space-between; transition: transform .12s;
+}
+.care-card:hover { transform: translateY(-4px); }
+.care-card .care-icon { font-size: 2.2rem; }
+.care-card h3 { margin: 12px 0 2px; font-size: 1.25rem; }
+.care-card p { margin: 0; opacity: .9; font-size: .9rem; }
+.care-card .care-go { margin-top: 14px; background: rgba(255,255,255,.22); align-self: flex-start; }
+
+.feature-list { list-style: none; padding: 0; margin: 0; }
+.feature-list li { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; align-items: center; gap: 10px; }
+.feature-list li:last-child { border-bottom: none; }
+.feature-list li::before { content: "✓"; color: var(--health); font-weight: 800; }
+
+/* ---------- Rehab / VR ---------- */
+.vr-stage {
+  border-radius: var(--radius); min-height: 300px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; color: #fff; position: relative; overflow: hidden; text-align: center;
+  background: linear-gradient(160deg, #0f172a, #1e3a5f); box-shadow: var(--shadow-lg);
+}
+.vr-stage .avatar-fig { font-size: 5rem; transition: transform .3s; }
+.vr-stage.active .avatar-fig { animation: bob 1.2s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+.vr-hud { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; justify-content: space-between; font-size: .85rem; opacity: .9; }
+.rep-counter { font-size: 3.4rem; font-weight: 800; margin: 8px 0; }
+.progress-track { height: 12px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--health), var(--brand-light)); transition: width .3s; }
+.level-ring { width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 1.4rem;
+  background: conic-gradient(var(--health) var(--pct,0%), var(--surface-2) 0); }
+.level-ring .inner { width: 58px; height: 58px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; }
+
+/* list rows */
+.list-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.list-row:last-child { border-bottom: none; }
+.list-row .lead { display: flex; align-items: center; gap: 12px; }
+.list-row .dot { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--mint); font-size: 1.2rem; }
+
+.tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
+.tab { padding: 10px 16px; border: none; background: transparent; color: var(--muted); font-weight: 600; border-bottom: 3px solid transparent; }
+.tab.active { color: var(--brand-dark); border-bottom-color: var(--brand); }

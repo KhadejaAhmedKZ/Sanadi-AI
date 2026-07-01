@@ -1,0 +1,54 @@
+/* App shell: sidebar + topbar + content */
+.app-shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0; background: linear-gradient(180deg, var(--brand-dark), #075e6e);
+  color: #e6fbff; padding: 22px 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.sidebar .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.3rem; margin: 4px 8px 24px; color: #fff; }
+.sidebar .brand .logo { width: 38px; height: 38px; border-radius: 11px; background: rgba(255,255,255,.15); display: grid; place-items: center; font-size: 1.3rem; }
+.sidebar .nav-group-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .08em; color: #7fdbe9; margin: 18px 10px 8px; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 12px;
+  color: #d3f4fa; font-weight: 500; margin-bottom: 3px; transition: background .15s;
+}
+.nav-item:hover { background: rgba(255,255,255,.10); }
+.nav-item.active { background: rgba(255,255,255,.20); color: #fff; font-weight: 700; }
+.nav-item .ico { font-size: 1.15rem; width: 22px; text-align: center; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.topbar {
+  height: 66px; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 26px; position: sticky; top: 0; z-index: 20;
+}
+.topbar .page-title { font-size: 1.15rem; font-weight: 700; }
+.topbar .user-chip { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 700; }
+
+.content { padding: 26px; max-width: 1200px; width: 100%; margin: 0 auto; }
+.page-head { margin-bottom: 22px; }
+.page-head h1 { margin: 0 0 4px; font-size: 1.6rem; }
+.page-head p { margin: 0; color: var(--muted); }
+
+/* Accessibility toolbar (floating) */
+.a11y-bar {
+  display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 6px; box-shadow: var(--shadow-sm);
+}
+.a11y-bar button {
+  border: none; background: var(--surface-2); color: var(--brand-dark); width: 38px; height: 38px;
+  border-radius: 50%; font-size: 1.05rem; display: grid; place-items: center; transition: background .15s;
+}
+.a11y-bar button:hover { background: #dff1f6; }
+.a11y-bar button.on { background: var(--brand); color: #fff; }
+
+/* mobile sidebar toggle */
+.menu-btn { display: none; border: none; background: transparent; font-size: 1.4rem; }
+@media (max-width: 860px) {
+  .sidebar { position: fixed; z-index: 50; transform: translateX(-100%); transition: transform .25s; }
+  .sidebar.open { transform: translateX(0); }
+  .menu-btn { display: block; }
+  .content { padding: 18px; }
+}
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 40; }
