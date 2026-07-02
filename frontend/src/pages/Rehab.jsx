@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 import { StatCard, Loader, ErrorNote } from "../components/ui.jsx";
+import RehabSkeleton from "../components/RehabSkeleton.jsx";
 
 const SCENE_BG = {
   garden: "linear-gradient(160deg,#134e2b,#166534)",
@@ -24,7 +25,9 @@ export default function Rehab() {
   const [reps, setReps] = useState(0);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
+  const [phase, setPhase] = useState(0); // 0..1 smooth position within the current rep
   const timerRef = useRef(null);
+  const rafRef = useRef(0);
 
   async function loadProgress() {
     try { setProgress(await api.rehabProgress(patientId)); } catch { /* ignore */ }
@@ -53,6 +56,23 @@ export default function Rehab() {
       });
     }, speed);
     return () => clearInterval(timerRef.current);
+  }, [running, selected, difficulty]);
+
+  // Smooth limb animation: a sine wave over each rep's duration, drives RehabSkeleton.
+  useEffect(() => {
+    if (!running || !selected) { setPhase(0); return; }
+    const speed = difficulty === "hard" ? 1600 : difficulty === "medium" ? 1200 : 900;
+    const startTime = performance.now();
+    let lastUpdate = 0;
+    function loop(now) {
+      if (now - lastUpdate > 33) {
+        setPhase(((now - startTime) % speed) / speed);
+        lastUpdate = now;
+      }
+      rafRef.current = requestAnimationFrame(loop);
+    }
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
   }, [running, selected, difficulty]);
 
   function start() { setReps(0); setDone(false); setRunning(true); }
@@ -111,7 +131,10 @@ export default function Rehab() {
               <span>🎯 {selected?.name}</span>
               <span>⚙️ {difficulty}</span>
             </div>
-            <div className="avatar-fig">{running ? "🏃" : done ? "🎉" : "🧍"}</div>
+            <div className="rehab-skeleton-wrap">
+              <RehabSkeleton exerciseId={selected?.id} bendFactor={phase} running={running} />
+              {done && <div className="rehab-done-badge">✓ Session complete</div>}
+            </div>
             <div className="rep-counter">{reps}<span style={{ fontSize: "1.2rem" }}>/{selected?.target_reps}</span></div>
             <div style={{ width: "70%" }}>
               <div className="progress-track" style={{ background: "rgba(255,255,255,.25)" }}>

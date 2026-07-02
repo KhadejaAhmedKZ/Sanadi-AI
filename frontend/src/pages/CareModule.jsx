@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { Loader, ErrorNote } from "../components/ui.jsx";
+import BreathingExercise from "../components/BreathingExercise.jsx";
 
 // Extra interactive helpers per module (client-side demos of the module tools).
 const TOOLS = {
@@ -104,13 +105,7 @@ export default function CareModule() {
             </div>
           ))}
 
-          {breathing && (
-            <div className="vr-stage active mt" style={{ minHeight: 180, background: "linear-gradient(160deg, #0f766e, #14b8a6)" }}>
-              <div className="avatar-fig">🫁</div>
-              <div style={{ fontWeight: 700 }}>Breathe in… hold… breathe out…</div>
-              <div className="muted" style={{ color: "#d1fae5" }}>Follow the rhythm for 4 cycles</div>
-            </div>
-          )}
+          {breathing && <BreathingExercise onClose={() => setBreathing(false)} />}
         </div>
       </div>
 

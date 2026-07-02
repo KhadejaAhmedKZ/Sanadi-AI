@@ -72,6 +72,30 @@
 .vr-stage .avatar-fig { font-size: 5rem; transition: transform .3s; }
 .vr-stage.active .avatar-fig { animation: bob 1.2s ease-in-out infinite; }
 @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+
+.rehab-skeleton-wrap { position: relative; width: 170px; }
+.rehab-skeleton { width: 100%; height: auto; filter: drop-shadow(0 0 12px rgba(56,189,248,0.35)); }
+.rehab-pulse { animation: rehab-ring-pulse 1.3s ease-in-out infinite; }
+@keyframes rehab-ring-pulse { 0%,100% { opacity: .5; r: 6; } 50% { opacity: 1; r: 7.5; } }
+.rehab-done-badge {
+  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  background: var(--health); color: #fff; font-size: .72rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+}
+
+/* ---------- Breathing exercise ---------- */
+.breathing-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 30px; border-radius: var(--radius); margin-top: 12px; min-height: 220px;
+  background: linear-gradient(160deg, #0f766e, #14b8a6); color: #fff; text-align: center;
+}
+.breathing-circle {
+  width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.18); border: 3px solid rgba(255,255,255,.75);
+  font-size: 2.2rem; font-weight: 800; box-shadow: 0 0 30px rgba(255,255,255,.25);
+  transition: transform 1s linear;
+}
+.breathing-label { font-size: 1.15rem; font-weight: 700; margin-top: 6px; }
 .vr-hud { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; justify-content: space-between; font-size: .85rem; opacity: .9; }
 .rep-counter { font-size: 3.4rem; font-weight: 800; margin: 8px 0; }
 .progress-track { height: 12px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
