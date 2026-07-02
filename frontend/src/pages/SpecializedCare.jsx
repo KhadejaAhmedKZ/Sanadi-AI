@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 import { Loader, ErrorNote } from "../components/ui.jsx";
 
@@ -8,6 +9,8 @@ export default function SpecializedCare() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isPatient = user?.role === "patient";
 
   useEffect(() => {
     api.careModules().then(setModules).catch((e) => setError(e.message)).finally(() => setLoading(false));
@@ -24,22 +27,34 @@ export default function SpecializedCare() {
       </div>
 
       <div className="grid cols-3">
-        {modules.map((m) => (
-          <div
-            key={m.id}
-            className="care-card"
-            style={{ background: `linear-gradient(150deg, ${m.color}, ${m.color}cc)` }}
-            onClick={() => navigate(m.route)}
-            role="button"
-          >
-            <div>
-              <div className="care-icon">{m.icon}</div>
-              <h3>{m.name}</h3>
-              <p>{m.tagline}</p>
+        {modules.map((m) => {
+          // VR Rehabilitation's interactive session is patient-only.
+          const locked = m.id === "rehabilitation" && !isPatient;
+          return (
+            <div
+              key={m.id}
+              className={"care-card" + (locked ? " locked" : "")}
+              style={{ background: `linear-gradient(150deg, ${m.color}, ${m.color}cc)` }}
+              onClick={() => { if (!locked) navigate(m.route); }}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && !locked) { e.preventDefault(); navigate(m.route); }
+              }}
+              role="button"
+              tabIndex={locked ? -1 : 0}
+              aria-disabled={locked}
+              aria-label={locked ? `${m.name} module — patient accounts only` : `Open ${m.name} module`}
+            >
+              <div>
+                <div className="care-icon">{m.icon}</div>
+                <h3>{m.name}</h3>
+                <p>{m.tagline}</p>
+              </div>
+              <span className="btn care-go sm" aria-hidden="true">
+                {locked ? "🔒 Patients only" : "Open module →"}
+              </span>
             </div>
-            <button className="btn care-go sm">Open module →</button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -281,6 +281,16 @@ export default function Rehab() {
                 className="list-row"
                 style={{ cursor: "pointer", opacity: running ? .5 : 1 }}
                 onClick={() => { if (!running) { setSelected(ex); setReps(0); setDone(false); } }}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && !running) {
+                    e.preventDefault();
+                    setSelected(ex); setReps(0); setDone(false);
+                  }
+                }}
+                role="button"
+                tabIndex={running ? -1 : 0}
+                aria-pressed={selected?.id === ex.id}
+                aria-label={`Select exercise: ${ex.name}`}
               >
                 <div className="lead">
                   <div className="dot">{selected?.id === ex.id ? "✅" : "🏋️"}</div>

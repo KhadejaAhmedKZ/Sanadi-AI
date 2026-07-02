@@ -38,7 +38,7 @@ const TOOLS = {
   chronic: [
     { id: "chronic-glucose", icon: "🩸", label: "Log blood glucose", hint: "Track diabetes readings", kind: "vital", vitalLabel: "Blood glucose", unit: "mg/dL" },
     { id: "chronic-bp", icon: "❤️", label: "Log blood pressure", hint: "Track hypertension", kind: "bp" },
-    { id: "chronic-trends", icon: "📈", label: "View health trends", hint: "Analytics agent insights", kind: "link", to: "/analytics" },
+    { id: "chronic-trends", icon: "📈", label: "View health trends", hint: "Analytics agent insights", kind: "link", to: "/analytics", patientOnly: true },
   ],
   respiratory: [
     { id: "resp-breathing", icon: "🌬️", label: "Guided breathing", hint: "4-7-8 breathing exercise", kind: "breathing" },
@@ -52,7 +52,7 @@ const TOOLS = {
   ],
   maternity: [
     { id: "mat-timeline", icon: "🤰", label: "Pregnancy timeline", hint: "Week-by-week guidance", kind: "timeline", storageKey: "sanadi_pregnancy_week" },
-    { id: "mat-appts", icon: "📅", label: "Prenatal appointments", hint: "Never miss a checkup", kind: "link", to: "/appointments" },
+    { id: "mat-appts", icon: "📅", label: "Prenatal appointments", hint: "Never miss a checkup", kind: "link", to: "/appointments", patientOnly: true },
     { id: "mat-prep", icon: "✅", label: "Preparation checklist", hint: "Get ready for delivery", kind: "checklist", storageKey: "sanadi_checklist_prep", items: PREP_ITEMS },
   ],
 };
@@ -93,11 +93,15 @@ export default function CareModule() {
     await api.logSymptom({ patient_id: user.id, description, pain_level: null });
   }
 
+  const isPatient = user?.role === "patient";
+
   function handleToolClick(tool) {
+    if (tool.patientOnly && !isPatient) return;
     if (tool.kind === "link") {
       navigate(tool.to);
       return;
     }
+    if (!isPatient) return; // games/loggers/checklists are patient-only
     setActiveTool((cur) => (cur === tool.id ? null : tool.id));
   }
 
@@ -158,29 +162,44 @@ export default function CareModule() {
         <div className="card">
           <h3 className="card-title">Quick tools</h3>
           <p className="card-sub">Interactive helpers for this module</p>
-          {tools.map((t) => (
-            <div className="list-row" key={t.id}>
-              <div className="lead">
-                <div className="dot">{t.icon}</div>
-                <div>
-                  <div style={{ fontWeight: 700 }}>{t.label}</div>
-                  <div className="muted" style={{ fontSize: ".82rem" }}>{t.hint}</div>
-                </div>
-              </div>
-              <button className="btn secondary sm" onClick={() => handleToolClick(t)}>
-                {t.kind === "link" ? "Open" : activeTool === t.id ? "Close" : "Open"}
-              </button>
+          {!isPatient && (
+            <div className="badge amber" style={{ marginBottom: 12, padding: "8px 12px", display: "block" }}>
+              🔒 Games, trackers and loggers are only available on the patient's own account. You can still view what's available below.
             </div>
-          ))}
+          )}
+          {tools.map((t) => {
+            const locked = (t.kind !== "link" && !isPatient) || (t.patientOnly && !isPatient);
+            return (
+              <div className="list-row" key={t.id}>
+                <div className="lead">
+                  <div className="dot">{t.icon}</div>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{t.label}</div>
+                    <div className="muted" style={{ fontSize: ".82rem" }}>{t.hint}</div>
+                  </div>
+                </div>
+                <button
+                  className="btn secondary sm"
+                  onClick={() => handleToolClick(t)}
+                  disabled={locked}
+                  title={locked ? "Patient accounts only" : undefined}
+                >
+                  {locked ? "🔒 Locked" : t.kind === "link" ? "Open" : activeTool === t.id ? "Close" : "Open"}
+                </button>
+              </div>
+            );
+          })}
 
-          {current && <div className="mt">{renderTool(current)}</div>}
+          {isPatient && current && <div className="mt">{renderTool(current)}</div>}
         </div>
       </div>
 
-      <div className="card center" style={{ background: "var(--mint)" }}>
-        Looking for physiotherapy? Try the immersive{" "}
-        <Link to="/care/rehabilitation">🥽 VR Rehabilitation module →</Link>
-      </div>
+      {isPatient && (
+        <div className="card center" style={{ background: "var(--mint)" }}>
+          Looking for physiotherapy? Try the immersive{" "}
+          <Link to="/care/rehabilitation">🥽 VR Rehabilitation module →</Link>
+        </div>
+      )}
     </div>
   );
 }

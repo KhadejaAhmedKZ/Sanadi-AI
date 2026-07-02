@@ -98,6 +98,8 @@
 .care-card h3 { margin: 12px 0 2px; font-size: 1.25rem; }
 .care-card p { margin: 0; opacity: .9; font-size: .9rem; }
 .care-card .care-go { margin-top: 14px; background: rgba(255,255,255,.22); align-self: flex-start; }
+.care-card.locked { cursor: not-allowed; opacity: .6; filter: grayscale(.3); }
+.care-card.locked:hover { transform: none; }
 
 .feature-list { list-style: none; padding: 0; margin: 0; }
 .feature-list li { padding: 10px 0; border-bottom: 1px dashed var(--border); display: flex; align-items: center; gap: 10px; }
