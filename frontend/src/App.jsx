@@ -66,7 +66,7 @@ export default function App() {
       >
         <Route path="/" element={<Home />} />
         {/* Patient-only sections */}
-        <Route path="/chat" element={<RequireRole role="patient"><Chat /></RequireRole>} />
+        <Route path="/chat" element={<Chat />} />
         <Route path="/dashboard" element={<RequireRole role="patient"><PatientDashboard /></RequireRole>} />
         <Route path="/appointments" element={<RequireRole role="patient"><Appointments /></RequireRole>} />
         <Route path="/medications" element={<RequireRole role="patient"><Medications /></RequireRole>} />

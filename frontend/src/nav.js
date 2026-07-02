@@ -46,6 +46,7 @@ export const NAV = {
       items: [
         { to: "/", icon: Home, label: "Home", end: true },
         { to: "/caregiver", icon: Users, label: "Caregiver Portal" },
+        { to: "/chat", icon: MessageCircleMore, label: "AI Assistant" },
         { to: "/care", icon: BookOpenText, label: "Care Guides" },
       ],
     },
@@ -55,7 +56,8 @@ export const NAV = {
       label: "Main",
       items: [
         { to: "/", icon: Home, label: "Home", end: true },
-        { to: "/provider", icon: Stethoscope, label: "Provider Portal" },
+        { to: "/provider", icon: Stethoscope, label: "Clinical Workspace" },
+        { to: "/chat", icon: MessageCircleMore, label: "Clinical Copilot" },
       ],
     },
   ],

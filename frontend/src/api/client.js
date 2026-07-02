@@ -57,6 +57,7 @@ export const api = {
   // Chat
   chat: (patient_id, message) =>
     request("/chat", { method: "POST", body: { patient_id, message } }),
+  assistantChat: (payload) => request("/chat/assistant", { method: "POST", body: payload }),
 
   chatWithImage: async (patient_id, file, message) => {
     const form = new FormData();

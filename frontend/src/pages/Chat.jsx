@@ -7,13 +7,46 @@ import { api } from "../api/client.js";
 import Markdown from "../components/Markdown.jsx";
 import AgentStatusBoard from "../components/AgentStatusBoard.jsx";
 
-const SUGGESTIONS = [
-  "What does my medication do?",
-  "Book a checkup for next Monday at 10am",
-  "I have knee pain after physiotherapy",
-  "Show my recovery progress",
-  "Help me with breathing exercises",
-];
+// Each role gets its own assistant: patients talk to the multi-agent
+// orchestrator; caregivers get a care-support companion grounded in their
+// linked patient's data; providers get a clinical copilot over the panel.
+const ROLE_CHAT = {
+  patient: {
+    welcome: (name) =>
+      `Hi ${name}! I'm Sanadi, your AI healthcare companion. My specialist agents can help with medical questions, appointments, medications, rehabilitation and more. You can also attach a photo — like a rash, wound, or medication label — for the Clinical agent to review. What can I do for you?`,
+    agents: ["orchestrator"],
+    suggestions: [
+      "What does my medication do?",
+      "Book a checkup for next Monday at 10am",
+      "I have knee pain after physiotherapy",
+      "Show my recovery progress",
+      "Help me with breathing exercises",
+    ],
+  },
+  caregiver: {
+    welcome: (name) =>
+      `Hi ${name}! I'm your caregiving companion. I know the care plan of the patient you're linked to (only what they've permitted), so ask me anything — what's normal, how to help day-to-day, what their medications do, or what to watch for.`,
+    agents: [],
+    suggestions: [
+      "How is my patient doing overall?",
+      "Is their recent pain normal?",
+      "How can I help with their recovery today?",
+      "What do their medications do?",
+      "What warning signs should I watch for?",
+    ],
+  },
+  provider: {
+    welcome: (name) =>
+      `Hello ${name}. I'm your clinical copilot — I can see your panel's adherence, risk scores, symptom trends, and open escalations. Ask me who needs attention, for a patient summary, or what to review before a visit.`,
+    agents: [],
+    suggestions: [
+      "Who needs attention first today?",
+      "Summarize Ahmed Ali's trajectory",
+      "Why is my highest-risk patient flagged?",
+      "What should I review before Sara's next visit?",
+    ],
+  },
+};
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
@@ -40,11 +73,13 @@ function CopyButton({ text }) {
 export default function Chat() {
   const { user } = useAuth();
   const { settings, speak } = useAccessibility();
+  const roleChat = ROLE_CHAT[user?.role] || ROLE_CHAT.patient;
+  const isPatient = (user?.role || "patient") === "patient";
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      text: `Hi ${user?.name?.split(" ")[0] || "there"}! I'm Sanadi, your AI healthcare companion. My specialist agents can help with medical questions, appointments, medications, rehabilitation and more. You can also attach a photo — like a rash, wound, or medication label — for the Clinical agent to review. What can I do for you?`,
-      agents: ["orchestrator"],
+      text: roleChat.welcome(user?.name?.split(" ")[0] || "there"),
+      agents: roleChat.agents,
       time: timestamp(),
     },
   ]);
@@ -107,22 +142,23 @@ export default function Chat() {
     }
     const msg = (text ?? input).trim();
     if (!msg || sending) return;
-    if (user?.role !== "patient") {
-      setMessages((m) => [...m, { role: "user", text: msg, time: timestamp() }, {
-        role: "bot",
-        text: "The AI chat companion is available for patient accounts. Switch to a patient account to try it.",
-        agents: ["orchestrator"],
-        time: timestamp(),
-      }]);
-      setInput("");
-      return;
-    }
 
     setMessages((m) => [...m, { role: "user", text: msg, time: timestamp() }]);
     setInput("");
     setSending(true);
     try {
-      const res = await api.chat(user.id, msg);
+      let res;
+      if (isPatient) {
+        res = await api.chat(user.id, msg);
+      } else {
+        // Role assistants keep thread context via the last few turns
+        // (skip the canned welcome message).
+        const history = messages
+          .slice(1)
+          .slice(-6)
+          .map((m) => ({ role: m.role === "user" ? "user" : "assistant", text: m.text || "" }));
+        res = await api.assistantChat({ user_id: user.id, role: user.role, message: msg, history });
+      }
       const botMsg = { role: "bot", text: res.reply, agents: res.agents_used, emergency: res.emergency, time: timestamp() };
       setMessages((m) => [...m, botMsg]);
       if (settings.voiceEnabled || settings.screenReader) speak(res.reply);
@@ -171,7 +207,7 @@ export default function Chat() {
   return (
     <div className="chat-window">
       <div className="suggestions">
-        {SUGGESTIONS.map((s) => (
+        {roleChat.suggestions.map((s) => (
           <button key={s} onClick={() => send(s)} disabled={sending}>{s}</button>
         ))}
       </div>
@@ -204,9 +240,11 @@ export default function Chat() {
               <span /><span /><span />
               <span style={{ marginLeft: 8 }}>{analyzingImage ? "Analyzing your photo…" : "Sanadi is thinking…"}</span>
             </div>
-            <div style={{ marginTop: 10 }}>
-              <AgentStatusBoard phase="thinking" />
-            </div>
+            {isPatient && (
+              <div style={{ marginTop: 10 }}>
+                <AgentStatusBoard phase="thinking" />
+              </div>
+            )}
           </motion.div>
         )}
       </div>
@@ -221,14 +259,16 @@ export default function Chat() {
 
       <div className="chat-input-bar">
         <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={onPickImage} />
-        <button
-          className="mic-btn"
-          onClick={() => fileInputRef.current?.click()}
-          title="Attach a photo for the Clinical agent to review"
-          aria-label="Attach photo"
-        >
-          📷
-        </button>
+        {isPatient && (
+          <button
+            className="mic-btn"
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach a photo for the Clinical agent to review"
+            aria-label="Attach photo"
+          >
+            📷
+          </button>
+        )}
         {voice.supported && (
           <button
             className={`mic-btn${voice.listening ? " listening" : ""}`}
