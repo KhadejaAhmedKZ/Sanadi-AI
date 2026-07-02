@@ -1,11 +1,14 @@
 """Healthcare provider endpoints — patient list and AI-generated visit summaries."""
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.ai.gemini_client import gemini
 from backend.ai.prompts import CLINICAL_AGENT
 from backend.database import get_db
-from backend.models import User, UserRole
+from backend.models import Appointment, AppointmentStatus, User, UserRole
 from backend.services import (
     appointment_service,
     medication_service,
@@ -26,6 +29,34 @@ def all_patients(db: Session = Depends(get_db)):
             "adherence_rate": medication_service.adherence_rate(db, p.id),
         }
         for p in patients
+    ]
+
+
+@router.get("/appointments/queue")
+def appointment_queue(days: int = 7, db: Session = Depends(get_db)):
+    """Upcoming scheduled appointments across all patients, soonest first."""
+    now = datetime.utcnow()
+    window_end = now + timedelta(days=days)
+    rows = db.scalars(
+        select(Appointment)
+        .where(
+            Appointment.status == AppointmentStatus.scheduled,
+            Appointment.scheduled_for >= now,
+            Appointment.scheduled_for <= window_end,
+        )
+        .order_by(Appointment.scheduled_for)
+    ).all()
+    patients = {p.id: p.name for p in db.query(User).filter(User.role == UserRole.patient).all()}
+    return [
+        {
+            "id": a.id,
+            "patient_id": a.patient_id,
+            "patient_name": patients.get(a.patient_id, "Unknown"),
+            "department": a.department,
+            "reason": a.reason,
+            "scheduled_for": a.scheduled_for,
+        }
+        for a in rows
     ]
 
 

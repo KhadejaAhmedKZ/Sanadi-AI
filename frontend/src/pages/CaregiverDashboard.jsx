@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import { api } from "../api/client.js";
-import { StatCard, Loader, ErrorNote, EmptyState } from "../components/ui.jsx";
+import { StatCard, ErrorNote, EmptyState } from "../components/ui.jsx";
+import { SkeletonStatGrid, SkeletonList } from "../components/Skeleton.jsx";
+import MiniCalendar from "../components/MiniCalendar.jsx";
+import { ReminderList } from "../components/CareTools.jsx";
 
 const SCOPES = ["medications", "appointments", "symptoms", "safety"];
 
 export default function CaregiverDashboard() {
   const { user } = useAuth();
-  const caregiverId = user.id; // the logged-in caregiver
-  // The patient this caregiver supports (by their patient ID). Demo default: 1.
+  const toast = useToast();
+  const caregiverId = user.id;
   const [patientId, setPatientId] = useState(1);
 
   const [overview, setOverview] = useState(null);
@@ -40,9 +45,14 @@ export default function CaregiverDashboard() {
       const scopes = SCOPES.filter((s) => grants[s]);
       await api.linkCaregiver({ caregiver_id: caregiverId, patient_id: patientId, scopes });
       await loadOverview();
-    } catch (e) { setError(e.message); }
+      toast.success("Access granted — patient overview loaded");
+    } catch (e) { setError(e.message); toast.error(e.message); }
     finally { setLinking(false); }
   }
+
+  const initials = overview ? overview.patient.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() : "?";
+  const apptDates = overview?.upcoming_appointments?.map((a) => a.when) || [];
+  const urgentCount = notifs.filter((n) => n.urgent).length;
 
   return (
     <div className="grid" style={{ gap: 22 }}>
@@ -55,52 +65,67 @@ export default function CaregiverDashboard() {
 
       <div className="card">
         <h3 className="card-title">Connect to a patient</h3>
-        <p className="card-sub">
-          Enter the patient's ID and the access they've granted you (demo patient ID: 1 or 2)
-        </p>
+        <p className="card-sub">Enter the patient's ID and the access they've granted you (demo patient ID: 1 or 2)</p>
         <label className="field" style={{ maxWidth: 220 }}>
           <span>Patient ID</span>
-          <input
-            type="number"
-            min="1"
-            value={patientId}
-            onChange={(e) => setPatientId(Number(e.target.value) || 1)}
-          />
+          <input type="number" min="1" value={patientId} onChange={(e) => setPatientId(Number(e.target.value) || 1)} />
         </label>
         <div className="row wrap">
           {SCOPES.map((s) => (
             <label key={s} className="badge gray" style={{ padding: "8px 14px", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={grants[s]}
-                onChange={() => setGrants({ ...grants, [s]: !grants[s] })}
-                style={{ width: "auto", marginRight: 6 }}
-              />
+              <input type="checkbox" checked={grants[s]} onChange={() => setGrants({ ...grants, [s]: !grants[s] })} style={{ width: "auto", marginRight: 6 }} />
               {s}
             </label>
           ))}
-          <button className="btn" onClick={link} disabled={linking}>
-            {linking ? "Linking…" : "Grant & view"}
-          </button>
+          <button className="btn" onClick={link} disabled={linking}>{linking ? "Linking…" : "Grant & view"}</button>
         </div>
       </div>
 
-      {loading ? <Loader /> : !overview ? (
+      {loading ? (
+        <><SkeletonStatGrid count={3} /><SkeletonList /></>
+      ) : !overview ? (
         <EmptyState icon="🔒" title="No access yet" hint="Grant scopes above to view the patient overview." />
       ) : (
         <>
-          <div className="card">
-            <h3 className="card-title">Patient: {overview.patient.name}</h3>
-            <div className="grid cols-3 mt">
-              {"adherence_rate" in overview && (
-                <StatCard icon="✅" value={`${Math.round(overview.adherence_rate * 100)}%`} label="Adherence" accent="#10b981" />
-              )}
-              {"missed_doses" in overview && (
-                <StatCard icon="⚠️" value={overview.missed_doses} label="Missed doses" accent="#f59e0b" />
-              )}
-              {"upcoming_appointments" in overview && (
-                <StatCard icon="📅" value={overview.upcoming_appointments.length} label="Upcoming visits" accent="#6366f1" />
-              )}
+          <motion.div
+            className="patient-hero-card"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="avatar" style={{ width: 56, height: 56, fontSize: "1.2rem" }}>{initials}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 800, fontSize: "1.15rem", fontFamily: "var(--font-display)" }}>{overview.patient.name}</div>
+              <div className="muted" style={{ fontSize: ".85rem" }}>Patient ID #{patientId} · You have {SCOPES.filter((s) => grants[s]).length} access scopes</div>
+            </div>
+            {urgentCount > 0 && <span className="badge red">🚨 {urgentCount} urgent alert{urgentCount > 1 ? "s" : ""}</span>}
+          </motion.div>
+
+          <div className="grid cols-3">
+            {"adherence_rate" in overview && (
+              <StatCard icon="✅" value={`${Math.round(overview.adherence_rate * 100)}%`} label="Adherence" accent="#22c55e" />
+            )}
+            {"missed_doses" in overview && (
+              <StatCard icon="⚠️" value={overview.missed_doses} label="Missed doses" accent="#f59e0b" />
+            )}
+            {"upcoming_appointments" in overview && (
+              <StatCard icon="📅" value={overview.upcoming_appointments.length} label="Upcoming visits" accent="#6366f1" />
+            )}
+          </div>
+
+          <div className="grid cols-2">
+            <div className="card">
+              <h3 className="card-title">📅 Appointment calendar</h3>
+              <p className="card-sub">Highlighted days have a scheduled visit</p>
+              <MiniCalendar highlightDates={apptDates} />
+            </div>
+
+            <div className="card">
+              <h3 className="card-title">📍 Patient location</h3>
+              <p className="card-sub">Live location sharing</p>
+              <div className="location-placeholder">
+                <span style={{ fontSize: "2rem" }}>🗺️</span>
+                <div className="muted" style={{ fontSize: ".85rem", marginTop: 6 }}>Location sharing isn't enabled yet</div>
+              </div>
             </div>
           </div>
 
@@ -117,6 +142,12 @@ export default function CaregiverDashboard() {
               ))}
             </div>
           )}
+
+          <div className="card">
+            <h3 className="card-title">🗓️ Daily routine tracker</h3>
+            <p className="card-sub">Shared reminders for this patient's routine</p>
+            <ReminderList storageKey={`sanadi_caregiver_routine_${patientId}`} placeholder="e.g. Morning walk, breakfast, medication check" />
+          </div>
         </>
       )}
 

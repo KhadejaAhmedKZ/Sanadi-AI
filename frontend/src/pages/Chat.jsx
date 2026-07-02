@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useAccessibility } from "../context/AccessibilityContext.jsx";
 import { useVoice } from "../hooks/useVoice.js";
 import { api } from "../api/client.js";
-import { AgentBadge } from "../components/ui.jsx";
+import Markdown from "../components/Markdown.jsx";
+import AgentStatusBoard from "../components/AgentStatusBoard.jsx";
 
 const SUGGESTIONS = [
   "What does my medication do?",
@@ -15,6 +17,26 @@ const SUGGESTIONS = [
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
+function timestamp() {
+  return new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* clipboard unavailable */ }
+  }
+  return (
+    <button className="msg-copy-btn" onClick={copy} title="Copy reply">
+      {copied ? "Copied ✓" : "⧉ Copy"}
+    </button>
+  );
+}
+
 export default function Chat() {
   const { user } = useAuth();
   const { settings, speak } = useAccessibility();
@@ -23,6 +45,7 @@ export default function Chat() {
       role: "bot",
       text: `Hi ${user?.name?.split(" ")[0] || "there"}! I'm Sanadi, your AI healthcare companion. My specialist agents can help with medical questions, appointments, medications, rehabilitation and more. You can also attach a photo — like a rash, wound, or medication label — for the Clinical agent to review. What can I do for you?`,
       agents: ["orchestrator"],
+      time: timestamp(),
     },
   ]);
   const [input, setInput] = useState("");
@@ -38,7 +61,6 @@ export default function Chat() {
   }, [messages, sending]);
 
   useEffect(() => {
-    // Release the object URL when replaced/unmounted to avoid leaking memory.
     return () => {
       if (pendingImage) URL.revokeObjectURL(pendingImage.previewUrl);
     };
@@ -46,14 +68,14 @@ export default function Chat() {
 
   function onPickImage(e) {
     const file = e.target.files?.[0];
-    e.target.value = ""; // allow re-selecting the same file later
+    e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setMessages((m) => [...m, { role: "bot", text: "⚠️ Please choose an image file (JPEG, PNG, or WebP).", agents: [] }]);
+      setMessages((m) => [...m, { role: "bot", text: "⚠️ Please choose an image file (JPEG, PNG, or WebP).", agents: [], time: timestamp() }]);
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      setMessages((m) => [...m, { role: "bot", text: "⚠️ That image is too large (max 8MB).", agents: [] }]);
+      setMessages((m) => [...m, { role: "bot", text: "⚠️ That image is too large (max 8MB).", agents: [], time: timestamp() }]);
       return;
     }
     setPendingImage({ file, previewUrl: URL.createObjectURL(file) });
@@ -71,30 +93,26 @@ export default function Chat() {
     const msg = (text ?? input).trim();
     if (!msg || sending) return;
     if (user?.role !== "patient") {
-      setMessages((m) => [...m, { role: "user", text: msg }, {
+      setMessages((m) => [...m, { role: "user", text: msg, time: timestamp() }, {
         role: "bot",
         text: "The AI chat companion is available for patient accounts. Switch to a patient account to try it.",
         agents: ["orchestrator"],
+        time: timestamp(),
       }]);
       setInput("");
       return;
     }
 
-    setMessages((m) => [...m, { role: "user", text: msg }]);
+    setMessages((m) => [...m, { role: "user", text: msg, time: timestamp() }]);
     setInput("");
     setSending(true);
     try {
       const res = await api.chat(user.id, msg);
-      const botMsg = {
-        role: "bot",
-        text: res.reply,
-        agents: res.agents_used,
-        emergency: res.emergency,
-      };
+      const botMsg = { role: "bot", text: res.reply, agents: res.agents_used, emergency: res.emergency, time: timestamp() };
       setMessages((m) => [...m, botMsg]);
       if (settings.voiceEnabled || settings.screenReader) speak(res.reply);
     } catch (err) {
-      setMessages((m) => [...m, { role: "bot", text: `⚠️ ${err.message}`, agents: [] }]);
+      setMessages((m) => [...m, { role: "bot", text: `⚠️ ${err.message}`, agents: [], time: timestamp() }]);
     } finally {
       setSending(false);
     }
@@ -103,29 +121,24 @@ export default function Chat() {
   async function sendImage() {
     if (!pendingImage || sending) return;
     if (user?.role !== "patient") {
-      setMessages((m) => [...m, { role: "bot", text: "Image analysis is available for patient accounts.", agents: [] }]);
+      setMessages((m) => [...m, { role: "bot", text: "Image analysis is available for patient accounts.", agents: [], time: timestamp() }]);
       setPendingImage(null);
       return;
     }
 
     const caption = input.trim();
     const { file, previewUrl } = pendingImage;
-    setMessages((m) => [...m, { role: "user", text: caption, image: previewUrl }]);
+    setMessages((m) => [...m, { role: "user", text: caption, image: previewUrl, time: timestamp() }]);
     setInput("");
     setPendingImage(null);
     setSending(true);
     try {
       const res = await api.chatWithImage(user.id, file, caption);
-      const botMsg = {
-        role: "bot",
-        text: res.reply,
-        agents: res.agents_used,
-        emergency: res.emergency,
-      };
+      const botMsg = { role: "bot", text: res.reply, agents: res.agents_used, emergency: res.emergency, time: timestamp() };
       setMessages((m) => [...m, botMsg]);
       if (settings.voiceEnabled || settings.screenReader) speak(res.reply);
     } catch (err) {
-      setMessages((m) => [...m, { role: "bot", text: `⚠️ ${err.message}`, agents: [] }]);
+      setMessages((m) => [...m, { role: "bot", text: `⚠️ ${err.message}`, agents: [], time: timestamp() }]);
     } finally {
       setSending(false);
     }
@@ -148,20 +161,36 @@ export default function Chat() {
 
       <div className="chat-scroll" ref={scrollRef}>
         {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.role}${m.emergency ? " emergency" : ""}`}>
+          <motion.div
+            key={i}
+            className={`msg ${m.role}${m.emergency ? " emergency" : ""}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
             {m.image && <img src={m.image} alt="Attached" className="chat-msg-image" />}
-            {m.text && <div>{m.text}</div>}
+            {m.text && (m.role === "bot" ? <Markdown text={m.text} /> : <div>{m.text}</div>)}
             {m.role === "bot" && m.agents?.length > 0 && (
-              <div className="agents-row">
-                {m.agents.map((a) => <AgentBadge key={a} name={a} />)}
+              <div className="mt" style={{ marginTop: 10 }}>
+                <AgentStatusBoard phase="done" activeAgents={m.agents} />
               </div>
             )}
-          </div>
+            <div className="msg-footer">
+              <span className="msg-time">{m.time}</span>
+              {m.role === "bot" && m.text && <CopyButton text={m.text} />}
+            </div>
+          </motion.div>
         ))}
         {sending && (
-          <div className="msg bot">
-            <span className="pulse">🧠 {pendingImage ? "Analyzing your photo…" : "Coordinating agents…"}</span>
-          </div>
+          <motion.div className="msg bot" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="typing-indicator">
+              <span /><span /><span />
+              <span style={{ marginLeft: 8 }}>{pendingImage ? "Analyzing your photo…" : "Sanadi is thinking…"}</span>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <AgentStatusBoard phase="thinking" />
+            </div>
+          </motion.div>
         )}
       </div>
 
@@ -174,13 +203,7 @@ export default function Chat() {
       )}
 
       <div className="chat-input-bar">
-        <input
-          type="file"
-          accept="image/*"
-          ref={fileInputRef}
-          style={{ display: "none" }}
-          onChange={onPickImage}
-        />
+        <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={onPickImage} />
         <button
           className="mic-btn"
           onClick={() => fileInputRef.current?.click()}
@@ -197,19 +220,24 @@ export default function Chat() {
             aria-label="Voice input"
           >
             {voice.listening ? "⏹️" : "🎤"}
+            {voice.listening && <span className="mic-pulse-ring" />}
           </button>
         )}
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={
-            voice.listening ? "Listening…" : pendingImage ? "Add a caption (optional)…" : "Type your message…"
-          }
+          placeholder={voice.listening ? "Listening…" : pendingImage ? "Add a caption (optional)…" : "Type your message…"}
         />
-        <button className="btn" onClick={() => send()} disabled={sending || (!input.trim() && !pendingImage)}>
+        <motion.button
+          className="btn"
+          onClick={() => send()}
+          disabled={sending || (!input.trim() && !pendingImage)}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+        >
           {sending ? "…" : pendingImage ? "Send photo" : "Send"} ➤
-        </button>
+        </motion.button>
       </div>
     </div>
   );

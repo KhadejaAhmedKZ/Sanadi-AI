@@ -1,85 +1,90 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useNotifications } from "../hooks/useNotifications.js";
+import { NAV } from "../nav.js";
 
-// Navigation is role-aware: each user only sees the sections meant for them.
-const NAV = {
-  patient: [
-    {
-      label: "Main",
-      items: [
-        { to: "/", icon: "🏠", label: "Home", end: true },
-        { to: "/chat", icon: "💬", label: "AI Assistant" },
-        { to: "/dashboard", icon: "📋", label: "My Health" },
-        { to: "/appointments", icon: "📅", label: "Appointments" },
-        { to: "/medications", icon: "💊", label: "Medications" },
-        { to: "/analytics", icon: "📊", label: "Analytics" },
-      ],
-    },
-    {
-      label: "Care Modules",
-      items: [
-        { to: "/care", icon: "🏥", label: "Specialized Care" },
-        { to: "/care/rehabilitation", icon: "🥽", label: "VR Rehab" },
-      ],
-    },
-  ],
-  caregiver: [
-    {
-      label: "Main",
-      items: [
-        { to: "/", icon: "🏠", label: "Home", end: true },
-        { to: "/caregiver", icon: "👨‍👩‍👧", label: "Caregiver Portal" },
-        { to: "/care", icon: "🏥", label: "Care Guides" },
-      ],
-    },
-  ],
-  provider: [
-    {
-      label: "Main",
-      items: [
-        { to: "/", icon: "🏠", label: "Home", end: true },
-        { to: "/provider", icon: "👨‍⚕️", label: "Provider Portal" },
-      ],
-    },
-  ],
-};
-
-function Item({ to, icon, label, end, onNavigate }) {
+function Item({ to, icon, label, end, onNavigate, collapsed }) {
   return (
     <NavLink
       to={to}
       end={end}
       onClick={onNavigate}
       className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}
+      title={collapsed ? label : undefined}
     >
       <span className="ico">{icon}</span>
-      <span>{label}</span>
+      {!collapsed && <span>{label}</span>}
     </NavLink>
   );
 }
 
-export default function Sidebar({ open, onNavigate }) {
-  const { user } = useAuth();
+export default function Sidebar({ open, onNavigate, collapsed, onToggleCollapse }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const groups = NAV[user?.role] || NAV.patient;
+  const notifications = useNotifications(user);
+
+  const initials = (user?.name || "U").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <aside className={"sidebar" + (open ? " open" : "")}>
-      <div className="brand">
-        <span className="logo">🏥</span>
-        <span>Sanadi&nbsp;AI</span>
+    <aside className={"sidebar" + (open ? " open" : "") + (collapsed ? " collapsed" : "")}>
+      <div className="sidebar-top">
+        <div className="brand">
+          <span className="logo">🏥</span>
+          {!collapsed && <span>Sanadi&nbsp;AI</span>}
+        </div>
+        <button className="collapse-btn" onClick={onToggleCollapse} aria-label="Toggle sidebar">
+          {collapsed ? "»" : "«"}
+        </button>
       </div>
 
-      {groups.map((group) => (
-        <div key={group.label}>
-          <div className="nav-group-label">{group.label}</div>
-          {group.items.map((i) => (
-            <Item key={i.to} {...i} onNavigate={onNavigate} />
-          ))}
-        </div>
-      ))}
+      <nav className="sidebar-scroll">
+        {groups.map((group) => (
+          <div key={group.label}>
+            {!collapsed && <div className="nav-group-label">{group.label}</div>}
+            {group.items.map((i) => (
+              <Item key={i.to} {...i} onNavigate={onNavigate} collapsed={collapsed} />
+            ))}
+          </div>
+        ))}
 
-      <div className="nav-group-label">Settings</div>
-      <Item to="/accessibility" icon="♿" label="Accessibility" onNavigate={onNavigate} />
+        {!collapsed && <div className="nav-group-label">Settings</div>}
+        <div style={{ position: "relative" }}>
+          <Item to="/accessibility" icon="♿" label="Accessibility" onNavigate={onNavigate} collapsed={collapsed} />
+          {notifications.length > 0 && (
+            <motion.span
+              className="sidebar-badge"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              style={collapsed ? { top: 6, right: 6 } : undefined}
+            >
+              {notifications.length}
+            </motion.span>
+          )}
+        </div>
+      </nav>
+
+      <button className="sidebar-profile" onClick={() => navigate("/accessibility")} title="Account settings">
+        <div className="avatar sm">{initials}</div>
+        {!collapsed && (
+          <div style={{ textAlign: "left", overflow: "hidden" }}>
+            <div style={{ fontWeight: 700, fontSize: ".85rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {user?.name}
+            </div>
+            <div className="muted" style={{ fontSize: ".72rem", textTransform: "capitalize" }}>{user?.role}</div>
+          </div>
+        )}
+      </button>
+      {!collapsed && (
+        <button
+          className="btn ghost sm block"
+          style={{ margin: "6px 12px 14px" }}
+          onClick={() => { logout(); navigate("/login"); }}
+        >
+          🚪 Logout
+        </button>
+      )}
     </aside>
   );
 }

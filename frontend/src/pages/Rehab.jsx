@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 import { StatCard, Loader, ErrorNote } from "../components/ui.jsx";
 import RehabSkeleton from "../components/RehabSkeleton.jsx";
+import ProgressRing from "../components/ProgressRing.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 
 const SCENE_BG = {
   garden: "linear-gradient(160deg,#134e2b,#166534)",
@@ -12,8 +15,54 @@ const SCENE_BG = {
   mountain: "linear-gradient(160deg,#1e293b,#475569)",
 };
 
+const ACHIEVEMENTS = [
+  { id: "first", icon: "🥇", label: "First Session", test: (p) => p.total_sessions >= 1 },
+  { id: "streak5", icon: "🔥", label: "5 Sessions", test: (p) => p.total_sessions >= 5 },
+  { id: "streak10", icon: "🏅", label: "10 Sessions", test: (p) => p.total_sessions >= 10 },
+  { id: "level3", icon: "⭐", label: "Level 3", test: (p) => p.level >= 3 },
+  { id: "level5", icon: "🌟", label: "Level 5", test: (p) => p.level >= 5 },
+  { id: "points100", icon: "💯", label: "100 Points", test: (p) => p.total_points >= 100 },
+];
+
+const CONFETTI = ["🎉", "✨", "⭐", "🎊", "💫"];
+
+function ConfettiBurst({ show }) {
+  return (
+    <AnimatePresence>
+      {show && (
+        <div className="confetti-field">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <motion.span
+              key={i}
+              className="confetti-piece"
+              initial={{ x: "50%", y: "60%", opacity: 1, scale: 0.6 }}
+              animate={{
+                x: `${50 + (Math.random() * 90 - 45)}%`,
+                y: `${20 + Math.random() * 30}%`,
+                opacity: 0,
+                scale: 1.1,
+                rotate: Math.random() * 200 - 100,
+              }}
+              transition={{ duration: 1.1 + Math.random() * 0.6, ease: "easeOut" }}
+            >
+              {CONFETTI[i % CONFETTI.length]}
+            </motion.span>
+          ))}
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function formatDuration(sec) {
+  const m = Math.floor(sec / 60).toString().padStart(2, "0");
+  const s = (sec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 export default function Rehab() {
   const { user } = useAuth();
+  const toast = useToast();
   const patientId = user.id;
   const [exercises, setExercises] = useState([]);
   const [progress, setProgress] = useState(null);
@@ -25,9 +74,11 @@ export default function Rehab() {
   const [reps, setReps] = useState(0);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
-  const [phase, setPhase] = useState(0); // 0..1 smooth position within the current rep
+  const [phase, setPhase] = useState(0);
+  const [sessionSeconds, setSessionSeconds] = useState(0);
   const timerRef = useRef(null);
   const rafRef = useRef(0);
+  const clockRef = useRef(null);
 
   async function loadProgress() {
     try { setProgress(await api.rehabProgress(patientId)); } catch { /* ignore */ }
@@ -40,7 +91,6 @@ export default function Rehab() {
       .finally(() => setLoading(false));
   }, [patientId]);
 
-  // Auto rep counter simulating AI movement tracking.
   useEffect(() => {
     if (!running || !selected) return;
     const speed = difficulty === "hard" ? 1600 : difficulty === "medium" ? 1200 : 900;
@@ -58,7 +108,6 @@ export default function Rehab() {
     return () => clearInterval(timerRef.current);
   }, [running, selected, difficulty]);
 
-  // Smooth limb animation: a sine wave over each rep's duration, drives RehabSkeleton.
   useEffect(() => {
     if (!running || !selected) { setPhase(0); return; }
     const speed = difficulty === "hard" ? 1600 : difficulty === "medium" ? 1200 : 900;
@@ -75,7 +124,13 @@ export default function Rehab() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [running, selected, difficulty]);
 
-  function start() { setReps(0); setDone(false); setRunning(true); }
+  useEffect(() => {
+    if (!running) { clearInterval(clockRef.current); return; }
+    clockRef.current = setInterval(() => setSessionSeconds((s) => s + 1), 1000);
+    return () => clearInterval(clockRef.current);
+  }, [running]);
+
+  function start() { setReps(0); setDone(false); setSessionSeconds(0); setRunning(true); }
   function stop() { clearInterval(timerRef.current); setRunning(false); }
 
   async function saveSession(painLevel) {
@@ -93,7 +148,7 @@ export default function Rehab() {
       setReps(0);
       await loadProgress();
       setError("");
-      alert(`Session saved! You earned ${res.points} points 🎉`);
+      toast.success(`Session saved — you earned ${res.points} points! 🎉`);
     } catch (e) { setError(e.message); }
   }
 
@@ -101,44 +156,86 @@ export default function Rehab() {
 
   const pct = selected ? Math.round((reps / selected.target_reps) * 100) : 0;
   const levelPct = progress ? (progress.total_points % 100) : 0;
+  const calorieFactor = difficulty === "hard" ? 0.9 : difficulty === "medium" ? 0.6 : 0.4;
+  const calories = Math.round(reps * calorieFactor * 10);
+  const unlocked = progress ? ACHIEVEMENTS.filter((a) => a.test(progress)) : [];
 
   return (
     <div className="grid" style={{ gap: 22 }}>
-      <div className="page-head">
-        <h1>🥽 VR Rehabilitation</h1>
-        <p>Immersive physiotherapy guided by the Rehabilitation agent with AI rep tracking.</p>
-      </div>
+      <motion.div
+        className="vr-hero"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="blob-field">
+          <div className="blob" style={{ width: 260, height: 260, background: "#06b6d4", top: -70, left: -40 }} />
+          <div className="blob" style={{ width: 220, height: 220, background: "#8b5cf6", bottom: -60, right: 0, animationDelay: "3s" }} />
+        </div>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <span className="badge" style={{ background: "rgba(255,255,255,.18)", color: "#fff" }}>🥽 VR Control Center</span>
+          <h1 style={{ margin: "10px 0 6px", fontSize: "2rem" }}>Rehabilitation Session</h1>
+          <p style={{ margin: 0, opacity: .9, maxWidth: 480 }}>
+            Guided physiotherapy with real-time AI rep tracking and a holographic motion coach.
+          </p>
+          {!running && !done && (
+            <motion.button
+              className="btn lg gradient mt"
+              onClick={start}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              style={{ background: "#fff", color: "var(--primary-600)" }}
+            >
+              ▶ Start VR Session
+            </motion.button>
+          )}
+        </div>
+        {progress && (
+          <div className="vr-hero-ring">
+            <ProgressRing value={levelPct} size={100} color="#fff" label={`Lv ${progress.level}`} sublabel={`${levelPct}/100 pts`} />
+          </div>
+        )}
+      </motion.div>
 
       <ErrorNote message={error} />
 
       {progress && (
         <div className="grid cols-4">
-          <StatCard icon="🏆" value={progress.level} label="Rehab level" accent="#10b981" />
-          <StatCard icon="⭐" value={progress.total_points} label="Total points" accent="#f59e0b" />
-          <StatCard icon="🔁" value={progress.total_sessions} label="Sessions done" accent="#0ea5e9" />
+          <StatCard icon="⏱️" value={formatDuration(sessionSeconds)} label="Session duration" accent="#0ea5e9" />
+          <StatCard icon="🔥" value={calories} label="Est. calories" accent="#f97316" />
+          <StatCard icon="🦿" value={`${pct}%`} label="Mobility this rep" accent="#22c55e" />
           <StatCard icon="🩹" value={progress.avg_pain ?? "—"} label="Avg pain" accent="#ef4444" />
         </div>
       )}
 
       <div className="grid" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
-        {/* VR stage */}
         <div>
           <div
             className={"vr-stage" + (running ? " active" : "")}
-            style={{ background: selected ? SCENE_BG[selected.vr_scene] : undefined }}
+            style={{ background: selected ? SCENE_BG[selected.vr_scene] : undefined, position: "relative" }}
           >
+            <ConfettiBurst show={done} />
             <div className="vr-hud">
               <span>🎯 {selected?.name}</span>
               <span>⚙️ {difficulty}</span>
             </div>
             <div className="rehab-skeleton-wrap">
               <RehabSkeleton exerciseId={selected?.id} bendFactor={phase} running={running} />
-              {done && <div className="rehab-done-badge">✓ Session complete</div>}
+              {done && (
+                <motion.div
+                  className="rehab-done-badge"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  ✓ Session complete
+                </motion.div>
+              )}
             </div>
             <div className="rep-counter">{reps}<span style={{ fontSize: "1.2rem" }}>/{selected?.target_reps}</span></div>
             <div style={{ width: "70%" }}>
               <div className="progress-track" style={{ background: "rgba(255,255,255,.25)" }}>
-                <div className="progress-fill" style={{ width: `${pct}%` }} />
+                <motion.div className="progress-fill" animate={{ width: `${pct}%` }} transition={{ duration: 0.3 }} />
               </div>
             </div>
             <div style={{ marginTop: 12, opacity: .9 }}>
@@ -174,16 +271,7 @@ export default function Rehab() {
           </div>
         </div>
 
-        {/* Exercise list + level ring */}
         <div className="grid" style={{ gap: 18 }}>
-          <div className="card center">
-            <h3 className="card-title">Progress to next level</h3>
-            <div className="level-ring" style={{ "--pct": `${levelPct}%`, margin: "12px auto" }}>
-              <div className="inner">{progress?.level ?? 1}</div>
-            </div>
-            <div className="muted">{levelPct}/100 points</div>
-          </div>
-
           <div className="card">
             <h3 className="card-title">Exercises</h3>
             <p className="card-sub">Choose your prescribed routine</p>
@@ -203,6 +291,22 @@ export default function Rehab() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="card">
+            <h3 className="card-title">🏆 Achievements</h3>
+            <p className="card-sub">{unlocked.length}/{ACHIEVEMENTS.length} unlocked</p>
+            <div className="achievement-grid">
+              {ACHIEVEMENTS.map((a) => {
+                const isUnlocked = unlocked.some((u) => u.id === a.id);
+                return (
+                  <div key={a.id} className={"achievement-badge" + (isUnlocked ? " unlocked" : "")} title={a.label}>
+                    <span>{a.icon}</span>
+                    <div className="muted" style={{ fontSize: ".68rem", marginTop: 4 }}>{a.label}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

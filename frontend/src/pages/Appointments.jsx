@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import { api } from "../api/client.js";
-import { Loader, EmptyState, ErrorNote } from "../components/ui.jsx";
+import { EmptyState, ErrorNote } from "../components/ui.jsx";
+import { SkeletonList } from "../components/Skeleton.jsx";
 
 const DEPARTMENTS = ["General", "Cardiology", "Orthopedics", "Physiotherapy", "Neurology", "Pediatrics", "Respiratory", "Maternity"];
 
 export default function Appointments() {
   const { user } = useAuth();
+  const toast = useToast();
   const patientId = user.id;
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,13 +40,17 @@ export default function Appointments() {
       });
       setForm({ department: "General", reason: "", scheduled_for: "" });
       await load();
-    } catch (e) { setError(e.message); }
+      toast.success("Appointment booked ✓");
+    } catch (e) { setError(e.message); toast.error(e.message); }
     finally { setSaving(false); }
   }
 
   async function cancel(id) {
-    try { await api.cancelAppointment(id); await load(); }
-    catch (e) { setError(e.message); }
+    try {
+      await api.cancelAppointment(id);
+      await load();
+      toast.info("Appointment cancelled");
+    } catch (e) { setError(e.message); toast.error(e.message); }
   }
 
   const fmt = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "full", timeStyle: "short" });
@@ -83,7 +90,7 @@ export default function Appointments() {
         <div className="card">
           <h3 className="card-title">Your appointments</h3>
           <p className="card-sub">Scheduled and past visits</p>
-          {loading ? <Loader /> : appts.length === 0 ? (
+          {loading ? <SkeletonList rows={3} bare /> : appts.length === 0 ? (
             <EmptyState icon="📅" title="No appointments yet" hint="Book one on the left." />
           ) : (
             appts.map((a) => (

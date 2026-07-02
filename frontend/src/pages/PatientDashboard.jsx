@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
-import { StatCard, Loader, EmptyState, ErrorNote } from "../components/ui.jsx";
+import { StatCard, EmptyState, ErrorNote } from "../components/ui.jsx";
+import { SkeletonStatGrid, SkeletonList } from "../components/Skeleton.jsx";
 
 export default function PatientDashboard() {
   const { user } = useAuth();
@@ -23,11 +24,19 @@ export default function PatientDashboard() {
   }
   useEffect(() => { load(); }, [patientId]);
 
-  if (loading) return <Loader label="Loading your health data…" />;
   if (error) return <ErrorNote message={error} />;
-  if (!dash) return null;
 
   const fmt = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+  if (loading || !dash) {
+    return (
+      <div className="grid" style={{ gap: 22 }}>
+        <div className="page-head"><h1>My Health</h1></div>
+        <SkeletonStatGrid />
+        <div className="grid cols-2"><SkeletonList /><SkeletonList /></div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid" style={{ gap: 22 }}>
@@ -37,8 +46,8 @@ export default function PatientDashboard() {
       </div>
 
       <div className="grid cols-4">
-        <StatCard icon="💊" value={dash.medications.length} label="Active medications" accent="#0ea5e9" />
-        <StatCard icon="✅" value={`${Math.round(dash.adherence_rate * 100)}%`} label="Adherence" accent="#10b981" />
+        <StatCard icon="💊" value={dash.medications.length} label="Active medications" accent="#2563eb" />
+        <StatCard icon="✅" value={`${Math.round(dash.adherence_rate * 100)}%`} label="Adherence" accent="#22c55e" />
         <StatCard icon="📅" value={dash.appointments.length} label="Upcoming visits" accent="#6366f1" />
         <StatCard icon="🩺" value={dash.recent_symptoms.length} label="Symptom logs" accent="#f59e0b" />
       </div>

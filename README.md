@@ -124,6 +124,18 @@ uvicorn backend.main:app --reload
 
 Open the interactive API docs at http://localhost:8000/docs.
 
+## Design system (2026 redesign)
+
+The frontend was rebuilt as a premium, animated healthcare product UI:
+- **Design tokens + dark mode** — CSS custom properties (`theme.css`), toggled via `ThemeContext`, persisted, respects OS preference by default.
+- **Framer Motion** everywhere — page transitions, card hover-lift, animated counters, progress rings, confetti completion bursts, staggered list entrances.
+- **Recharts** — area chart (pain trend), bar chart (adherence by patient), pie chart (population risk) — lazy-loaded with their pages so the main bundle stays lean.
+- **Reusable kit** (`components/`): `Modal`, `Skeleton`/`SkeletonList`/`SkeletonStatGrid`, `ProgressRing`, `AnimatedCounter`, `AgentStatusBoard`, `Markdown` (dependency-free, safe — no `dangerouslySetInnerHTML`), `Table` (sortable), `MiniCalendar`, `ToastContext`/`useToast`.
+- **Shell** — collapsible sidebar (persisted), topbar with quick-search across pages, real notifications (derived from actual backend data per role), profile menu, dark-mode toggle, language-selector and Google/Face-ID placeholders (no backend for these yet — clearly marked, not faked).
+- **Lazy loading** — Analytics, Rehab, CareModule, SpecializedCare, Caregiver/Provider dashboards are code-split via `React.lazy`; Recharts only downloads when a chart page is visited.
+- **404 page** and an **offline banner** (via `navigator.onLine`).
+- A few dashboard tiles (heart rate, sleep, steps, water, calories) are deterministic **per-day demo values** — there's no wearable/device integration — clearly separate from real data (adherence, appointments, logged vitals, which always come from the API).
+
 ## Frontend (React + Vite)
 
 ```bash

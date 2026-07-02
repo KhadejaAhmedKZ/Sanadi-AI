@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import { api } from "../api/client.js";
-import { Loader, EmptyState, ErrorNote } from "../components/ui.jsx";
+import { EmptyState, ErrorNote } from "../components/ui.jsx";
+import { SkeletonList } from "../components/Skeleton.jsx";
 
 export default function Medications() {
   const { user } = useAuth();
+  const toast = useToast();
   const patientId = user.id;
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [toast, setToast] = useState("");
   const [form, setForm] = useState({ name: "", dosage: "", schedule: "" });
   const [saving, setSaving] = useState(false);
 
@@ -29,16 +31,16 @@ export default function Medications() {
       await api.addMedication({ patient_id: patientId, ...form });
       setForm({ name: "", dosage: "", schedule: "" });
       await load();
-    } catch (e) { setError(e.message); }
+      toast.success(`${form.name} added to your medications`);
+    } catch (e) { setError(e.message); toast.error(e.message); }
     finally { setSaving(false); }
   }
 
   async function takeDose(med, taken) {
     try {
       await api.logDose(med.id, taken);
-      setToast(taken ? `✅ Logged dose of ${med.name}` : `⚠️ Marked ${med.name} as missed`);
-      setTimeout(() => setToast(""), 2500);
-    } catch (e) { setError(e.message); }
+      taken ? toast.success(`Logged dose of ${med.name} ✓`) : toast.warning(`Marked ${med.name} as missed`);
+    } catch (e) { setError(e.message); toast.error(e.message); }
   }
 
   return (
@@ -49,7 +51,6 @@ export default function Medications() {
       </div>
 
       <ErrorNote message={error} />
-      {toast && <div className="badge green" style={{ padding: "10px 16px", alignSelf: "flex-start" }}>{toast}</div>}
 
       <div className="grid cols-2">
         <div className="card">
@@ -72,7 +73,7 @@ export default function Medications() {
         <div className="card">
           <h3 className="card-title">Your medications</h3>
           <p className="card-sub">Log each dose as taken or missed</p>
-          {loading ? <Loader /> : meds.length === 0 ? (
+          {loading ? <SkeletonList rows={3} bare /> : meds.length === 0 ? (
             <EmptyState icon="💊" title="No medications yet" hint="Add one on the left." />
           ) : (
             meds.map((m) => (

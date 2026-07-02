@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import Layout from "./components/Layout.jsx";
@@ -6,15 +7,33 @@ import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import Chat from "./pages/Chat.jsx";
 import PatientDashboard from "./pages/PatientDashboard.jsx";
-import CaregiverDashboard from "./pages/CaregiverDashboard.jsx";
-import DoctorDashboard from "./pages/DoctorDashboard.jsx";
 import Appointments from "./pages/Appointments.jsx";
 import Medications from "./pages/Medications.jsx";
-import Analytics from "./pages/Analytics.jsx";
-import SpecializedCare from "./pages/SpecializedCare.jsx";
-import Rehab from "./pages/Rehab.jsx";
-import CareModule from "./pages/CareModule.jsx";
 import Accessibility from "./pages/Accessibility.jsx";
+import NotFound from "./pages/NotFound.jsx";
+import { SkeletonStatGrid, SkeletonList } from "./components/Skeleton.jsx";
+
+// Lazy-load the heavier / less-frequently-visited pages (charts, VR
+// visualization, staff dashboards) so the initial bundle stays lean.
+const CaregiverDashboard = lazy(() => import("./pages/CaregiverDashboard.jsx"));
+const DoctorDashboard = lazy(() => import("./pages/DoctorDashboard.jsx"));
+const Analytics = lazy(() => import("./pages/Analytics.jsx"));
+const SpecializedCare = lazy(() => import("./pages/SpecializedCare.jsx"));
+const Rehab = lazy(() => import("./pages/Rehab.jsx"));
+const CareModule = lazy(() => import("./pages/CareModule.jsx"));
+
+function PageSkeleton() {
+  return (
+    <div className="grid" style={{ gap: 22 }}>
+      <SkeletonStatGrid />
+      <SkeletonList />
+    </div>
+  );
+}
+
+function LazyPage({ children }) {
+  return <Suspense fallback={<PageSkeleton />}>{children}</Suspense>;
+}
 
 function Protected({ children }) {
   const { user, ready } = useAuth();
@@ -51,18 +70,17 @@ export default function App() {
         <Route path="/dashboard" element={<RequireRole role="patient"><PatientDashboard /></RequireRole>} />
         <Route path="/appointments" element={<RequireRole role="patient"><Appointments /></RequireRole>} />
         <Route path="/medications" element={<RequireRole role="patient"><Medications /></RequireRole>} />
-        <Route path="/analytics" element={<RequireRole role="patient"><Analytics /></RequireRole>} />
-        <Route path="/care/rehabilitation" element={<RequireRole role="patient"><Rehab /></RequireRole>} />
+        <Route path="/analytics" element={<RequireRole role="patient"><LazyPage><Analytics /></LazyPage></RequireRole>} />
+        <Route path="/care/rehabilitation" element={<RequireRole role="patient"><LazyPage><Rehab /></LazyPage></RequireRole>} />
         {/* Role portals */}
-        <Route path="/caregiver" element={<RequireRole role="caregiver"><CaregiverDashboard /></RequireRole>} />
-        <Route path="/provider" element={<RequireRole role="provider"><DoctorDashboard /></RequireRole>} />
+        <Route path="/caregiver" element={<RequireRole role="caregiver"><LazyPage><CaregiverDashboard /></LazyPage></RequireRole>} />
+        <Route path="/provider" element={<RequireRole role="provider"><LazyPage><DoctorDashboard /></LazyPage></RequireRole>} />
         {/* Open to everyone */}
-        <Route path="/care" element={<SpecializedCare />} />
-        <Route path="/care/:moduleId" element={<CareModule />} />
+        <Route path="/care" element={<LazyPage><SpecializedCare /></LazyPage>} />
+        <Route path="/care/:moduleId" element={<LazyPage><CareModule /></LazyPage>} />
         <Route path="/accessibility" element={<Accessibility />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
-
-      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

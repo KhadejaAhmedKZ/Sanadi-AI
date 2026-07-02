@@ -71,6 +71,7 @@ export const api = {
   // Providers
   allPatients: () => request("/providers/patients"),
   aiSummary: (id) => request(`/providers/patients/${id}/summary`),
+  appointmentQueue: (days = 7) => request(`/providers/appointments/queue?days=${days}`),
 
   // Caregivers
   linkCaregiver: (payload) => request("/caregivers/link", { method: "POST", body: payload }),

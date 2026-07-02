@@ -51,7 +51,7 @@
 .fc-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .fc-status { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
 .fc-status.active { color: var(--health); }
-.fc-status.loading { color: var(--warn); }
+.fc-status.loading { color: var(--warning); }
 .fc-status.error { color: var(--danger); }
 .fc-hint { font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; line-height: 1.4; }
 .fc-error { font-size: 0.85rem; color: var(--danger-dark); background: #fee2e2; padding: 10px; border-radius: 10px; }

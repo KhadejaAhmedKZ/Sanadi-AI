@@ -1,0 +1,137 @@
+/* ============================================================
+   Component styles: skeleton, toast, modal, agent board, markdown,
+   progress ring, floating decorative elements.
+   ============================================================ */
+
+/* ---------- Skeleton loaders ---------- */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* ---------- Toasts ---------- */
+.toast-stack {
+  position: fixed; top: 18px; right: 18px; z-index: 3000;
+  display: flex; flex-direction: column; gap: 10px; max-width: 340px;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lg);
+  font-size: .9rem; font-weight: 600; cursor: pointer; color: var(--text);
+}
+.toast-icon { font-size: 1.05rem; }
+.toast-success { border-color: var(--success); }
+.toast-error { border-color: var(--danger); }
+.toast-warning { border-color: var(--warning); }
+.toast-info { border-color: var(--primary); }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(8, 15, 30, 0.55); backdrop-filter: blur(3px);
+  z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-panel {
+  background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 480px; max-height: 86vh; overflow-y: auto; border: 1px solid var(--border);
+}
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px 8px; }
+.modal-head h3 { margin: 0; font-family: var(--font-display); }
+.modal-body { padding: 8px 22px 22px; }
+.modal-footer { padding: 0 22px 22px; display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ---------- Agent status board ---------- */
+.agent-board { display: flex; flex-wrap: wrap; gap: 8px; }
+.agent-chip {
+  display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border); font-size: .78rem; font-weight: 700;
+  color: var(--muted); position: relative;
+}
+.agent-chip.thinking { background: var(--primary-100); border-color: var(--primary); color: var(--primary-600); }
+.agent-chip.done { background: var(--success-100); border-color: var(--success); color: #166534; }
+.agent-chip-icon { font-size: 1rem; }
+.agent-chip-check {
+  display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--success); color: #fff; font-size: .65rem; margin-left: 2px;
+}
+
+/* ---------- Markdown (chat replies) ---------- */
+.md p { line-height: 1.55; }
+.md ul, .md ol { margin: 4px 0 10px; padding-left: 22px; }
+.md li { margin-bottom: 4px; line-height: 1.5; }
+.md code {
+  background: rgba(37, 99, 235, 0.1); color: var(--primary-600); padding: 1px 6px;
+  border-radius: 6px; font-size: .88em; font-family: "SF Mono", Menlo, Consolas, monospace;
+}
+.md-code-block {
+  background: #0f172a; border-radius: 12px; overflow: hidden; margin: 8px 0; font-size: .85rem;
+}
+.md-code-head {
+  display: flex; justify-content: space-between; align-items: center; padding: 7px 12px;
+  background: rgba(255,255,255,.06); color: #94a3b8; font-family: monospace; font-size: .75rem;
+}
+.md-code-head button {
+  background: rgba(255,255,255,.08); color: #e2e8f0; border: none; border-radius: 6px;
+  padding: 3px 9px; font-size: .72rem; font-weight: 600;
+}
+.md-code-block pre { margin: 0; padding: 12px 14px; overflow-x: auto; }
+.md-code-block code { background: none; color: #e2e8f0; padding: 0; font-family: "SF Mono", Menlo, Consolas, monospace; }
+
+/* ---------- Progress ring ---------- */
+.progress-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.progress-ring-label {
+  position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; line-height: 1.1;
+}
+.progress-ring-label strong { font-size: 1.3rem; font-family: var(--font-display); }
+.progress-ring-label span { font-size: .68rem; color: var(--muted); margin-top: 2px; }
+
+/* ---------- Floating decorative blobs (hero/login backgrounds) ---------- */
+.blob-field { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.blob {
+  position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55;
+  animation: blob-float 14s ease-in-out infinite;
+}
+@keyframes blob-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(24px, -30px) scale(1.08); }
+  66% { transform: translate(-20px, 22px) scale(0.95); }
+}
+
+/* ---------- Glass utility ---------- */
+.glass-panel {
+  background: var(--glass-bg); backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+}
+
+/* ---------- 404 ---------- */
+.notfound-wrap {
+  min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.notfound-icon { font-size: 4rem; margin-bottom: 6px; }
+.notfound-wrap h1 { font-size: 4rem; margin: 0; font-family: var(--font-display); background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.notfound-wrap p { color: var(--muted); font-size: 1.05rem; margin: 6px 0 0; }
+
+/* ---------- Reusable table ---------- */
+.table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.data-table th {
+  text-align: left; padding: 10px 12px; color: var(--muted); font-weight: 700; font-size: .76rem;
+  text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.data-table th.sortable { cursor: pointer; user-select: none; }
+.data-table th.sortable:hover { color: var(--primary); }
+.data-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr.clickable { cursor: pointer; transition: background .15s; }
+.data-table tr.clickable:hover { background: var(--surface-2); }
+
+/* ---------- Offline banner ---------- */
+.offline-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 4000; background: var(--warning);
+  color: #1c1300; text-align: center; padding: 8px; font-weight: 700; font-size: .85rem;
+}
