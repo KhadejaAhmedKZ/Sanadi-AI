@@ -347,7 +347,12 @@ export default function DoctorDashboard() {
                     {!analytics?.pain_series?.length ? (
                       <EmptyState icon="📈" title="No pain data recorded yet" />
                     ) : (
-                      <ResponsiveContainer width="100%" height={220}>
+                      <ResponsiveContainer
+                        width="100%"
+                        height={220}
+                        role="img"
+                        aria-label={`Pain trend chart: from ${analytics.pain_series[0].pain}/10 on ${analytics.pain_series[0].date} to ${analytics.pain_series[analytics.pain_series.length - 1].pain}/10 on ${analytics.pain_series[analytics.pain_series.length - 1].date}`}
+                      >
                         <LineChart data={analytics.pain_series} margin={{ top: 10, right: 12, left: -24, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                           <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke={gridColor} />
@@ -364,7 +369,12 @@ export default function DoctorDashboard() {
                     {!analytics?.dose_series?.length ? (
                       <EmptyState icon="💊" title="No dose logs yet" />
                     ) : (
-                      <ResponsiveContainer width="100%" height={220}>
+                      <ResponsiveContainer
+                        width="100%"
+                        height={220}
+                        role="img"
+                        aria-label={`Medication adherence chart over ${analytics.dose_series.length} days, overall adherence ${Math.round((analytics.adherence_rate ?? 0) * 100)} percent`}
+                      >
                         <BarChart data={analytics.dose_series} margin={{ top: 10, right: 12, left: -24, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                           <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke={gridColor} />

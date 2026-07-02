@@ -10,8 +10,8 @@
 
 .sidebar-top { display: flex; align-items: center; justify-content: space-between; padding: 18px 14px 8px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; font-family: var(--font-display); color: var(--text); overflow: hidden; white-space: nowrap; }
-.brand .logo { width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: var(--gradient-primary); display: grid; place-items: center; font-size: 1.2rem; box-shadow: var(--shadow-sm); }
-.collapse-btn { border: none; background: var(--surface-2); color: var(--muted); width: 26px; height: 26px; border-radius: 8px; font-size: .85rem; flex-shrink: 0; }
+.brand .logo { width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px; background: var(--gradient-primary); display: grid; place-items: center; color: #fff; box-shadow: var(--shadow-sm); }
+.collapse-btn { border: none; background: var(--surface-2); color: var(--muted); width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; display: grid; place-items: center; }
 .collapse-btn:hover { background: var(--primary-100); color: var(--primary); }
 
 .sidebar-scroll { flex: 1; overflow-y: auto; padding: 6px 10px; }
@@ -23,7 +23,7 @@
 }
 .nav-item:hover { background: var(--surface-2); color: var(--text); }
 .nav-item.active { background: var(--primary-100); color: var(--primary-600); }
-.nav-item .ico { font-size: 1.1rem; width: 20px; text-align: center; flex-shrink: 0; }
+.nav-item .ico { width: 20px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
 .sidebar.collapsed .nav-item { justify-content: center; }
 
 .sidebar-badge {
@@ -36,7 +36,7 @@
   background: var(--surface-2); border-radius: 14px; text-align: left;
 }
 .sidebar-profile:hover { background: var(--primary-100); }
-.avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--gradient-primary); color: #fff; display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
+.avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--gradient-primary); color: #fff; display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
 .avatar.sm { width: 32px; height: 32px; font-size: .8rem; }
 
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -49,7 +49,7 @@
 .topbar .page-title { font-size: 1.1rem; font-weight: 700; font-family: var(--font-display); }
 
 .icon-btn {
-  width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+  width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
   display: grid; place-items: center; font-size: 1.05rem; position: relative; color: var(--text);
   transition: background .15s, transform .1s;
 }
@@ -61,11 +61,11 @@
 }
 .lang-select {
   border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 0 12px; height: 38px;
-  display: flex; align-items: center; font-size: .8rem; font-weight: 700; color: var(--muted); cursor: default;
+  display: flex; align-items: center; gap: 5px; font-size: .8rem; font-weight: 700; color: var(--muted); cursor: default;
 }
 
 .topbar-search { position: relative; display: flex; align-items: center; }
-.topbar-search .search-ico { position: absolute; left: 13px; font-size: .85rem; opacity: .6; }
+.topbar-search .search-ico { position: absolute; left: 13px; opacity: .6; display: inline-flex; align-items: center; top: 50%; transform: translateY(-50%); }
 .topbar-search input {
   width: 220px; padding: 9px 12px 9px 34px; border-radius: 12px; background: var(--surface-2);
   border: 1px solid transparent; font-size: .87rem;

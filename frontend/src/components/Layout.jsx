@@ -17,6 +17,7 @@ export default function Layout() {
 
   return (
     <div className={"app-shell" + (collapsed ? " sidebar-collapsed" : "")}>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <Sidebar
         open={open}
@@ -26,7 +27,7 @@ export default function Layout() {
       />
       <div className="main">
         <TopBar onMenu={() => setOpen((o) => !o)} />
-        <div className="content">
+        <div className="content" id="main-content" tabIndex={-1}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

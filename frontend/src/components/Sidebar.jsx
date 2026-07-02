@@ -1,10 +1,11 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { HeartPulse, ChevronsLeft, ChevronsRight, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNotifications } from "../hooks/useNotifications.js";
-import { NAV } from "../nav.js";
+import { NAV, AccessibilityIcon } from "../nav.js";
 
-function Item({ to, icon, label, end, onNavigate, collapsed }) {
+function Item({ to, icon: Icon, label, end, onNavigate, collapsed }) {
   return (
     <NavLink
       to={to}
@@ -13,7 +14,7 @@ function Item({ to, icon, label, end, onNavigate, collapsed }) {
       className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}
       title={collapsed ? label : undefined}
     >
-      <span className="ico">{icon}</span>
+      <span className="ico"><Icon size={19} strokeWidth={2.1} aria-hidden="true" /></span>
       {!collapsed && <span>{label}</span>}
     </NavLink>
   );
@@ -31,11 +32,11 @@ export default function Sidebar({ open, onNavigate, collapsed, onToggleCollapse 
     <aside className={"sidebar" + (open ? " open" : "") + (collapsed ? " collapsed" : "")}>
       <div className="sidebar-top">
         <div className="brand">
-          <span className="logo">🏥</span>
+          <span className="logo"><HeartPulse size={22} strokeWidth={2.4} aria-hidden="true" /></span>
           {!collapsed && <span>Sanadi&nbsp;AI</span>}
         </div>
         <button className="collapse-btn" onClick={onToggleCollapse} aria-label="Toggle sidebar">
-          {collapsed ? "»" : "«"}
+          {collapsed ? <ChevronsRight size={17} aria-hidden="true" /> : <ChevronsLeft size={17} aria-hidden="true" />}
         </button>
       </div>
 
@@ -51,7 +52,7 @@ export default function Sidebar({ open, onNavigate, collapsed, onToggleCollapse 
 
         {!collapsed && <div className="nav-group-label">Settings</div>}
         <div style={{ position: "relative" }}>
-          <Item to="/accessibility" icon="♿" label="Accessibility" onNavigate={onNavigate} collapsed={collapsed} />
+          <Item to="/accessibility" icon={AccessibilityIcon} label="Accessibility" onNavigate={onNavigate} collapsed={collapsed} />
           {notifications.length > 0 && (
             <motion.span
               className="sidebar-badge"
@@ -82,7 +83,7 @@ export default function Sidebar({ open, onNavigate, collapsed, onToggleCollapse 
           style={{ margin: "6px 12px 14px" }}
           onClick={() => { logout(); navigate("/login"); }}
         >
-          🚪 Logout
+          <LogOut size={16} aria-hidden="true" /> Logout
         </button>
       )}
     </aside>

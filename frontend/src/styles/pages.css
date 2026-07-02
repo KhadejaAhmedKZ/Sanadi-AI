@@ -193,7 +193,7 @@
 .list-row .dot { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--mint); font-size: 1.2rem; }
 
 .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
-.tab { padding: 10px 16px; border: none; background: transparent; color: var(--muted); font-weight: 600; border-bottom: 3px solid transparent; }
+.tab { padding: 10px 16px; min-height: 44px; border: none; background: transparent; color: var(--muted); font-weight: 600; border-bottom: 3px solid transparent; transition: color .15s; }
 .tab.active { color: var(--brand-dark); border-bottom-color: var(--brand); }
 
 /* ---------- Caregiver: patient hero, calendar, location placeholder ---------- */

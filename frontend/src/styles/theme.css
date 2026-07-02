@@ -20,6 +20,12 @@
   --danger-100: #fee2e2;
   --danger-dark: #b91c1c;
 
+  /* Readable text-on-tinted-chip colors (flip in dark mode for contrast) */
+  --success-strong: #166534;
+  --warning-strong: #92400e;
+  --danger-strong: #991b1b;
+  --ring: #0891b2;
+
   /* ---- Legacy aliases (kept so existing components keep working) ---- */
   --brand: var(--primary);
   --brand-dark: var(--primary-600);
@@ -71,9 +77,16 @@
 
   --primary-100: #1e3a6e;
   --secondary-100: #113b36;
+  --success-100: #14331f;
   --warning-100: #4a3413;
   --danger-100: #4a1a1a;
   --mint: var(--secondary-100);
+
+  /* Chip text must lighten on dark tinted backgrounds (WCAG 4.5:1) */
+  --success-strong: #86efac;
+  --warning-strong: #fcd34d;
+  --danger-strong: #fca5a5;
+  --ring: #22d3ee;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
@@ -101,6 +114,40 @@ a { color: var(--primary); text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 ::selection { background: var(--primary-100); color: var(--primary-600); }
 
+/* ---------- Keyboard focus (WCAG 2.4.7) ----------
+   Visible 3px ring on every interactive element, keyboard-only
+   (:focus-visible) so mouse clicks stay clean. */
+:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.btn:focus-visible, .icon-btn:focus-visible, .tab:focus-visible,
+.nav-item:focus-visible, .clinical-list-item:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Skip link (visible only when focused) ---------- */
+.skip-link {
+  position: absolute; left: -9999px; top: 12px; z-index: 3000;
+  background: var(--primary); color: #fff; padding: 10px 18px;
+  border-radius: 10px; font-weight: 700; box-shadow: var(--shadow);
+}
+.skip-link:focus { left: 12px; }
+
+/* ---------- Reduced motion (WCAG 2.3.3) ----------
+   Neutralize decorative animation for users who ask for it; content
+   appears instantly instead of animating in. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ---------- Accessibility modes (still respected) ---------- */
 body.a11y-large-text { font-size: 1.22rem; }
 body.a11y-large-text .btn,
@@ -117,6 +164,7 @@ body.a11y-high-contrast .card, body.a11y-high-contrast .stat-card { border: 1px 
 .btn {
   display: inline-flex; align-items: center; gap: 8px; justify-content: center;
   border: none; border-radius: 14px; padding: 11px 20px; font-weight: 600; font-size: 0.95rem;
+  min-height: 44px; /* WCAG touch target */
   background: var(--primary); color: #fff; transition: transform .12s ease, box-shadow .2s ease, background .2s ease, filter .2s;
   box-shadow: var(--shadow-sm);
 }
@@ -131,7 +179,7 @@ body.a11y-high-contrast .card, body.a11y-high-contrast .stat-card { border: 1px 
 .btn.success { background: var(--success); }
 .btn.gradient { background: var(--gradient-primary); }
 .btn.block { width: 100%; }
-.btn.sm { padding: 7px 14px; font-size: 0.85rem; border-radius: 10px; }
+.btn.sm { padding: 7px 14px; font-size: 0.85rem; border-radius: 10px; min-height: 38px; }
 .btn.lg { padding: 15px 26px; font-size: 1.05rem; border-radius: 16px; }
 .btn.icon { padding: 10px; border-radius: 12px; }
 
@@ -188,9 +236,9 @@ input:focus, textarea:focus, select:focus {
   display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px;
   font-size: 0.75rem; font-weight: 700; background: var(--mint); color: var(--primary-600);
 }
-.badge.green { background: var(--success-100); color: #166534; }
-.badge.amber { background: var(--warning-100); color: #92400e; }
-.badge.red { background: var(--danger-100); color: #991b1b; }
+.badge.green { background: var(--success-100); color: var(--success-strong); }
+.badge.amber { background: var(--warning-100); color: var(--warning-strong); }
+.badge.red { background: var(--danger-100); color: var(--danger-strong); }
 .badge.gray { background: var(--surface-2); color: var(--muted); }
 
 /* ---------- Utility ---------- */

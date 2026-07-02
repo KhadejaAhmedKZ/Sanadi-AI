@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { Menu, Search, Sparkles, Sun, Moon, Globe, Bell, Accessibility, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { useNotifications } from "../hooks/useNotifications.js";
@@ -66,13 +67,13 @@ export default function TopBar({ onMenu }) {
   return (
     <header className="topbar">
       <div className="row">
-        <button className="menu-btn" onClick={onMenu} aria-label="Toggle menu">☰</button>
+        <button className="menu-btn" onClick={onMenu} aria-label="Toggle menu"><Menu size={20} aria-hidden="true" /></button>
         <span className="page-title">{title}</span>
       </div>
 
       <div className="row" style={{ gap: 10 }}>
         <div className="topbar-search" ref={searchRef}>
-          <span className="search-ico">🔍</span>
+          <span className="search-ico"><Search size={15} aria-hidden="true" /></span>
           <input
             placeholder="Search pages & features…"
             value={query}
@@ -89,7 +90,7 @@ export default function TopBar({ onMenu }) {
               >
                 {results.map((r) => (
                   <button key={r.to} onClick={() => goTo(r.to)}>
-                    <span>{r.icon}</span> {r.label}
+                    <span style={{ display: "inline-flex" }}><r.icon size={15} aria-hidden="true" /></span> {r.label}
                   </button>
                 ))}
               </motion.div>
@@ -98,22 +99,22 @@ export default function TopBar({ onMenu }) {
         </div>
 
         <button className="btn gradient sm" onClick={() => navigate("/chat")} title="Ask Sanadi AI">
-          ✨ Ask AI
+          <Sparkles size={15} aria-hidden="true" /> Ask AI
         </button>
 
         <AccessibilityBar />
 
         <button className="icon-btn" onClick={toggleTheme} title="Toggle dark mode" aria-label="Toggle dark mode">
-          {isDark ? "☀️" : "🌙"}
+          {isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
         </button>
 
         <div className="lang-select" title="More languages coming soon">
-          🌐 EN
+          <Globe size={14} aria-hidden="true" /> EN
         </div>
 
         <div style={{ position: "relative" }} ref={notifRef}>
           <button className="icon-btn" onClick={() => setNotifOpen((o) => !o)} aria-label="Notifications">
-            🔔
+            <Bell size={18} aria-hidden="true" />
             {notifications.length > 0 && <span className="dot-badge">{notifications.length}</span>}
           </button>
           <AnimatePresence>
@@ -161,16 +162,16 @@ export default function TopBar({ onMenu }) {
                 exit={{ opacity: 0, y: -8, scale: 0.97 }}
               >
                 <button className="dropdown-link" onClick={() => { setProfileOpen(false); navigate("/accessibility"); }}>
-                  ♿ Accessibility
+                  <Accessibility size={16} aria-hidden="true" /> Accessibility
                 </button>
                 <button className="dropdown-link" onClick={() => { setProfileOpen(false); toggleTheme(); }}>
-                  {isDark ? "☀️ Light mode" : "🌙 Dark mode"}
+                  {isDark ? <><Sun size={16} aria-hidden="true" /> Light mode</> : <><Moon size={16} aria-hidden="true" /> Dark mode</>}
                 </button>
                 <button
                   className="dropdown-link danger"
                   onClick={() => { logout(); navigate("/login"); }}
                 >
-                  🚪 Logout
+                  <LogOut size={16} aria-hidden="true" /> Logout
                 </button>
               </motion.div>
             )}
