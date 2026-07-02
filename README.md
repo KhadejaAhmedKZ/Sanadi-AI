@@ -30,6 +30,123 @@ Demo accounts (password `demo1234` for all):
 
 ---
 
+## 🏆 Judging criteria
+
+*Reviewed by the judging panel between 13–19 July 2026.*
+
+### Problem Fit — 20%
+
+Healthcare today is fragmented across separate tools for medical questions,
+appointments, medication tracking, rehabilitation, and caregiver coordination
+— and patients with mobility, vision, or cognitive limitations are often
+locked out of all of them. Sanadi AI addresses this directly:
+
+- **One coordinated care team, not one chatbot.** The Orchestrator routes
+  each message to the right specialist(s) — Clinical, Operations, Engagement,
+  Analytics, Accessibility, Rehabilitation — mirroring how a real care team
+  divides work, instead of a single model trying to do everything.
+- **Acts, not just answers.** A message like *"I have knee pain, can you book
+  me a checkup?"* results in a real appointment row in the database and a
+  real symptom log, not just a conversational reply.
+- **Built for the patients traditional apps exclude.** Hands-free head/blink
+  control for limited hand mobility, a full screen-reader mode for blind
+  users, and gamified VR physiotherapy for rehab adherence — accessibility
+  was a first-class design requirement, not an afterthought.
+- **Serves the whole care circle.** Distinct, permission-scoped portals for
+  patients, caregivers, and providers reflect how care actually happens —
+  caregivers only see what a patient explicitly grants, and providers get
+  AI-generated pre-visit summaries that save real clinical time.
+
+### Technical Execution — 25%
+
+- **Actually deployed and working**, not a local demo: FastAPI backend on
+  Render, React frontend on GitHub Pages, CI/CD via GitHub Actions, verified
+  end-to-end against the live stack (not just localhost) at every stage of
+  development.
+- **Engineering under real constraints.** The free Gemini tier caps requests
+  at 5/minute — the naive multi-agent fan-out design would have exhausted
+  that in a single message. `SINGLE_CALL_MODE` collapses safety screening +
+  agent routing + reply + structured actions into one Gemini call, with the
+  full fan-out pipeline preserved behind a flag for higher-quota deployments.
+- **Multimodal AI.** Patients can attach a photo (rash, wound, medication
+  label) and get a real Gemini vision analysis, gated by the same safety
+  pipeline as text.
+- **Real data model**, not mocked JSON: SQLAlchemy models for users,
+  medications + dose logs, appointments, symptoms, rehab sessions, care
+  links, and conversation history, with adherence/analytics computed from
+  actual logged data.
+- **Verified, not assumed.** The rep-matching logic for the memory game, the
+  breathing-exercise state machine, and the emergency safety net were each
+  checked with scripted simulations before shipping; every new feature was
+  tested end-to-end through the real dev proxy or the live deployment before
+  being called done.
+- **Performance-conscious frontend**: route-based code-splitting cut the main
+  JS bundle from 894KB to ~500KB, with the charting library only downloading
+  when a chart page is actually opened.
+
+### Design & Usability — 20%
+
+- A complete design system (light **and** dark mode, a defined color/type
+  scale, Framer Motion micro-interactions) built for a clinical audience —
+  calm, high-contrast-friendly, no visual noise.
+- **Role-aware UI**: a patient, caregiver, and provider each see a
+  navigation and dashboard built for their job, not a generic app shell with
+  everything visible to everyone.
+- **Interactive, not static, care modules** — a real memory-matching game,
+  vitals loggers, a guided breathing timer with a live countdown, checklists,
+  and a growth chart — because a chronic-care or memory-care patient needs
+  tools they can *use*, not another wall of text.
+- **Accessible by construction**: large-text and high-contrast modes, full
+  keyboard/screen-reader support, and hands-free face control were tested as
+  first-class interaction paths, not bolted on.
+- Toasts, skeleton loading states, empty states, and a proper 404/offline
+  experience — the small details that separate a usable product from a demo.
+
+### Responsible AI & Safety — 20%
+
+- **Safety runs before anything else, and works even if the AI doesn't.** An
+  offline keyword net catches emergency phrases (chest pain, severe bleeding,
+  suicidal ideation, and more) with **zero API calls**, so a Gemini outage or
+  rate limit never leaves a real emergency unhandled — and it automatically
+  notifies the patient's linked caregiver.
+- **The vision agent is explicitly constrained**: it describes what it sees,
+  never issues a definitive diagnosis, flags anything that looks like it
+  needs urgent care, and always closes with a reminder to see a professional
+  — enforced in the system prompt, not left to chance.
+- **Privacy by design**: caregivers only ever see the data scopes a patient
+  explicitly grants (`medications`, `appointments`, `symptoms`, `safety`);
+  images are validated for type/size before ever reaching the model; API
+  keys live only in environment variables and were never committed to the
+  repository.
+- **Honest about what's real.** Every demo/placeholder element in the product
+  — the weather widget, Google/Face-ID login, a handful of wellness tiles
+  with no wearable integration — is explicitly labeled as such in the UI and
+  in this README, so nothing in the product misrepresents itself as clinical
+  data or a real integration.
+- **Edge cases considered directly**: unsupported file types and oversized
+  uploads are rejected before hitting the model; unknown patient IDs return
+  clean 404s; a fully offline patient device still gets a functioning safety
+  net and an explicit "you're offline" notice instead of silent failure.
+
+### Innovation — 15%
+
+- **A genuine multi-agent architecture**, not a single system prompt
+  dressed up with a chatbot UI — each specialist has its own guardrails,
+  responsibilities, and (optionally) its own model call.
+- **MediaPipe-powered hands-free control** repurposed for a healthcare
+  accessibility use case that most hackathon health apps skip entirely —
+  head-tracking cursor control plus blink-to-click, running fully
+  client-side.
+- **A rate-limit-aware orchestration design** that turns a real infrastructure
+  constraint (5 req/min on a free AI tier) into an architectural decision
+  rather than a blocker — most prototypes would simply break under it.
+- **Gamified VR-style rehabilitation** with an animated, per-exercise
+  holographic skeleton synced to live rep tracking, points, levels, and
+  achievements — designed to solve the actual clinical problem of poor
+  rehab-exercise adherence, not just for visual flair.
+
+---
+
 ## 1. The multi-agent AI system
 
 A single conversation is handled by an **Orchestrator** that coordinates six
