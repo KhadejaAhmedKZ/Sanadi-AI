@@ -62,6 +62,34 @@ class GeminiClient:
             logger.error("Gemini generate failed: %s", exc)
             return "I'm having trouble reaching my knowledge service right now. Please try again shortly."
 
+    async def analyze_image(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        prompt: str,
+        system_instruction: str = "",
+        temperature: float = 0.3,
+    ) -> str:
+        """Multimodal generation: an image plus a text prompt."""
+        if not self._client:
+            return "[offline] Gemini API key not configured."
+        from google.genai import types
+
+        try:
+            image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+            resp = await self._client.aio.models.generate_content(
+                model=self._model,
+                contents=[image_part, prompt],
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction or None,
+                    temperature=temperature,
+                ),
+            )
+            return (resp.text or "").strip()
+        except Exception as exc:
+            logger.error("Gemini analyze_image failed: %s", exc)
+            return "I couldn't analyze that image right now. Please try again shortly."
+
     async def generate_json(
         self,
         prompt: str,

@@ -138,7 +138,7 @@ Run the backend alongside it. Routes:
 |-------|------|--------------|
 | `/login`, `/register` | anyone | Auth |
 | `/` | all | Home — patients see live stats; caregivers/providers redirect to their portal |
-| `/chat` | patient | Multi-agent AI chat — shows which agents replied; voice input & TTS |
+| `/chat` | patient | Multi-agent AI chat — shows which agents replied; voice input & TTS; attach a photo (📷) for the Clinical agent to analyze |
 | `/dashboard` | patient | Meds, appointments, symptoms, adherence |
 | `/appointments` | patient | Book / cancel appointments |
 | `/medications` | patient | Add meds, log doses taken/missed |
@@ -190,6 +190,7 @@ curl -s localhost:8000/rehab/patients/1/progress
 | Method | Path | Purpose |
 |-------|------|---------|
 | POST | `/chat` | Talk to the multi-agent system |
+| POST | `/chat/image` | Upload a photo (rash, wound, medication…) for the Clinical agent to review |
 | POST | `/patients/register`, `/patients/login` | Auth |
 | GET  | `/patients/{id}/dashboard` | Meds, appointments, symptoms, adherence |
 | POST | `/patients/symptoms` | Log a symptom |
