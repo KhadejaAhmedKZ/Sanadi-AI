@@ -99,12 +99,18 @@ export const api = {
   allPatients: () => request("/providers/patients"),
   aiSummary: (id) => request(`/providers/patients/${id}/summary`),
   appointmentQueue: (days = 7) => request(`/providers/appointments/queue?days=${days}`),
+  caseInsights: (id) => request(`/providers/patients/${id}/case-insights`),
+  providerEscalations: () => request("/providers/escalations"),
+  setEscalationStatus: (id, status, provider_id) =>
+    request(`/providers/escalations/${id}/status`, { method: "POST", body: { status, provider_id } }),
 
   // Caregivers
   linkCaregiver: (payload) => request("/caregivers/link", { method: "POST", body: payload }),
   caregiverOverview: (cid, pid) =>
     request(`/caregivers/${cid}/patients/${pid}/overview`),
   caregiverNotifications: (cid) => request(`/caregivers/${cid}/notifications`),
+  raiseEscalation: (payload) => request("/caregivers/escalations", { method: "POST", body: payload }),
+  caregiverEducation: (cid, pid) => request(`/caregivers/${cid}/patients/${pid}/education`),
 
   // Rehab / VR
   exercises: () => request("/rehab/exercises"),

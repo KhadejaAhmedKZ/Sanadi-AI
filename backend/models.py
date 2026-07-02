@@ -167,6 +167,28 @@ class RehabSession(Base):
     completed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class EscalationStatus(str, enum.Enum):
+    open = "open"
+    acknowledged = "acknowledged"
+    resolved = "resolved"
+
+
+class Escalation(Base):
+    """A caregiver-raised urgent review request, triaged by providers."""
+
+    __tablename__ = "escalations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    raised_by: Mapped[int] = mapped_column(ForeignKey("users.id"))  # caregiver
+    reason: Mapped[str] = mapped_column(String(400))
+    status: Mapped[EscalationStatus] = mapped_column(
+        Enum(EscalationStatus), default=EscalationStatus.open
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class Notification(Base):
     __tablename__ = "notifications"
 

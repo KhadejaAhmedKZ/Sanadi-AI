@@ -6,11 +6,22 @@
     "conditions": "Knee recovery (post-surgery)",
     "accessibility_needs": null,
     "medications": [
-      {"name": "Ibuprofen", "dosage": "400mg", "schedule": "08:00,20:00"},
-      {"name": "Calcium + Vitamin D", "dosage": "1 tablet", "schedule": "09:00"}
+      {
+        "name": "Ibuprofen",
+        "dosage": "400mg",
+        "schedule": "08:00,20:00"
+      },
+      {
+        "name": "Calcium + Vitamin D",
+        "dosage": "1 tablet",
+        "schedule": "09:00"
+      }
     ],
     "symptoms": [
-      {"description": "Knee pain after physiotherapy", "pain_level": 4}
+      {
+        "description": "Knee pain after physiotherapy",
+        "pain_level": 4
+      }
     ]
   },
   {
@@ -20,11 +31,37 @@
     "conditions": "Type 2 Diabetes, Hypertension",
     "accessibility_needs": "Larger text, simple explanations",
     "medications": [
-      {"name": "Metformin", "dosage": "500mg", "schedule": "08:00,20:00"},
-      {"name": "Amlodipine", "dosage": "5mg", "schedule": "08:00"}
+      {
+        "name": "Metformin",
+        "dosage": "500mg",
+        "schedule": "08:00,20:00"
+      },
+      {
+        "name": "Amlodipine",
+        "dosage": "5mg",
+        "schedule": "08:00"
+      }
     ],
     "symptoms": [
-      {"description": "Occasional dizziness in the morning", "pain_level": null}
+      {
+        "description": "Occasional dizziness in the morning",
+        "pain_level": null
+      }
     ]
+  },
+  {
+    "name": "Fatima Hassan",
+    "email": "fatima@example.com",
+    "password": "demo1234",
+    "conditions": "Knee recovery (post-surgery)",
+    "accessibility_needs": null,
+    "medications": [
+      {
+        "name": "Paracetamol",
+        "dosage": "500mg",
+        "schedule": "08:00,20:00"
+      }
+    ],
+    "symptoms": []
   }
 ]

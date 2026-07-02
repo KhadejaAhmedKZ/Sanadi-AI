@@ -3,14 +3,137 @@
 Run from the project root:  python -m backend.seed
 """
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from backend.database import SessionLocal, init_db
-from backend.models import User, UserRole
+from backend.models import MedicationLog, RehabSession, SymptomLog, User, UserRole
 from backend.services import medication_service, patient_service
 from backend.utils.security import hash_password
 
 DATA_FILE = Path(__file__).parent / "data" / "sample_patients.json"
+
+# Backdated history per patient email, so trend charts, risk triage, and
+# case-insight cohort comparisons have real trajectories to work with.
+# pain: list of (days_ago, level, description) — oldest first.
+# doses: (days_of_history, taken_probability_pattern as list cycled daily, doses_per_day)
+# rehab: list of (days_ago, exercise, completed, target, difficulty, pain)
+HISTORY = {
+    # Sara: the recovery SUCCESS story — pain falling, meds taken, steady rehab.
+    "sara@example.com": {
+        "pain": [
+            (21, 7, "Sharp knee pain climbing stairs"),
+            (18, 6, "Knee stiffness in the morning"),
+            (15, 6, "Aching after physiotherapy"),
+            (12, 5, "Mild swelling after walking"),
+            (9, 4, "Knee pain after physiotherapy"),
+            (6, 3, "Slight discomfort on long walks"),
+            (3, 3, "Occasional twinge going downstairs"),
+            (1, 2, "Feeling much steadier today"),
+        ],
+        "doses": (14, [True, True, True, True, True, True, False], 2),
+        "rehab": [
+            (20, "Seated Leg Raises", 8, 10, "easy", 6),
+            (17, "Seated Leg Raises", 10, 10, "easy", 5),
+            (14, "Ankle Circles", 12, 12, "easy", 4),
+            (11, "Seated Leg Raises", 12, 12, "medium", 4),
+            (8, "Standing Knee Bends", 10, 12, "medium", 3),
+            (5, "Standing Knee Bends", 12, 12, "medium", 3),
+            (2, "Step-ups", 10, 12, "hard", 2),
+        ],
+    },
+    # Ahmed: the DETERIORATING case — pain rising, doses missed, rehab dropped.
+    "ahmed@example.com": {
+        "pain": [
+            (18, 3, "Mild headache in the evening"),
+            (15, 3, "Feet feel slightly numb"),
+            (12, 4, "Dizzy standing up quickly"),
+            (9, 5, "Persistent headache and fatigue"),
+            (6, 5, "Tingling in both feet"),
+            (3, 6, "Blurry vision reading labels"),
+            (1, 7, "Strong headache, felt faint this morning"),
+        ],
+        "doses": (14, [True, False, True, False, False, True, False], 2),
+        "rehab": [
+            (16, "Gentle Stretching", 8, 10, "easy", 3),
+            (13, "Gentle Stretching", 6, 10, "easy", 4),
+        ],
+    },
+    # Fatima: RECOVERED — the cohort's proof that adherence + rehab works.
+    "fatima@example.com": {
+        "pain": [
+            (30, 8, "Severe knee pain post-surgery"),
+            (25, 6, "Pain when bending the knee"),
+            (20, 5, "Stiffness after sitting"),
+            (15, 3, "Mild ache after exercises"),
+            (11, 2, "Barely noticeable discomfort"),
+            (8, 1, "Feeling almost back to normal"),
+        ],
+        "doses": (21, [True, True, True, True, True, True, True, True, True, False], 2),
+        "rehab": [
+            (28, "Seated Leg Raises", 6, 10, "easy", 7),
+            (25, "Seated Leg Raises", 10, 10, "easy", 5),
+            (22, "Ankle Circles", 12, 12, "easy", 4),
+            (19, "Standing Knee Bends", 10, 12, "medium", 3),
+            (16, "Standing Knee Bends", 12, 12, "medium", 2),
+            (13, "Step-ups", 12, 12, "hard", 2),
+            (10, "Step-ups", 14, 14, "hard", 1),
+        ],
+    },
+}
+
+
+def _seed_history(db, patient: User) -> None:
+    spec = HISTORY.get(patient.email)
+    if not spec:
+        return
+    now = datetime.utcnow()
+
+    for days_ago, level, desc in spec["pain"]:
+        db.add(
+            SymptomLog(
+                patient_id=patient.id,
+                description=desc,
+                pain_level=level,
+                logged_at=now - timedelta(days=days_ago, hours=3),
+            )
+        )
+
+    meds = medication_service.list_medications(db, patient.id)
+    days, pattern, per_day = spec["doses"]
+    if meds:
+        i = 0
+        for d in range(days, 0, -1):
+            for dose in range(per_day):
+                med = meds[dose % len(meds)]
+                taken = pattern[i % len(pattern)]
+                i += 1
+                when = now - timedelta(days=d, hours=12 - dose * 8)
+                db.add(
+                    MedicationLog(
+                        medication_id=med.id,
+                        taken=taken,
+                        scheduled_for=when,
+                        logged_at=when,
+                    )
+                )
+
+    for days_ago, exercise, done, target, diff, pain in spec.get("rehab", []):
+        completion = done / target if target else 0
+        db.add(
+            RehabSession(
+                patient_id=patient.id,
+                exercise=exercise,
+                reps_completed=done,
+                reps_target=target,
+                difficulty=diff,
+                pain_level=pain,
+                points=int({"easy": 50, "medium": 80, "hard": 120}.get(diff, 50) * completion),
+                completed_at=now - timedelta(days=days_ago, hours=5),
+            )
+        )
+    db.commit()
+    print(f"  ↳ history: {len(spec['pain'])} symptoms, {days * per_day} dose logs, {len(spec.get('rehab', []))} rehab sessions")
 
 
 def seed() -> None:
@@ -42,6 +165,7 @@ def seed() -> None:
                 patient_service.log_symptom(
                     db, patient.id, sym["description"], sym.get("pain_level")
                 )
+            _seed_history(db, patient)
             print(f"✓ Seeded patient {patient.name} (id={patient.id})")
 
         _seed_staff(db)

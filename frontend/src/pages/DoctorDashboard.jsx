@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import { useLocalStorage } from "../hooks/useLocalStorage.js";
+import { useVoice } from "../hooks/useVoice.js";
 import { api } from "../api/client.js";
+import Markdown from "../components/Markdown.jsx";
 import { ErrorNote, EmptyState } from "../components/ui.jsx";
 import { SkeletonList } from "../components/Skeleton.jsx";
 
 const RISK_COLORS = ["#22c55e", "#ef4444"];
+const POLL_MS = 20000;
 
-function riskLevel(rate) {
-  if (rate < 0.7) return { color: "var(--danger)", label: "High risk" };
-  if (rate < 0.85) return { color: "var(--warning)", label: "Watch" };
-  return { color: "var(--success)", label: "Stable" };
-}
+const RISK_STYLES = {
+  high: { color: "var(--danger)", label: "High risk" },
+  watch: { color: "var(--warning)", label: "Watch" },
+  stable: { color: "var(--success)", label: "Stable" },
+};
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
@@ -33,19 +37,55 @@ export default function DoctorDashboard() {
     `sanadi_notes_${user.id}_${selectedPatient?.id ?? "none"}`,
     ""
   );
+  const toast = useToast();
+  const [escalations, setEscalations] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+
+  // Voice dictation for clinical notes (appends each finished phrase).
+  const voice = useVoice({
+    onResult: (t) => setNotes((n) => (n ? n.trimEnd() + " " : "") + t.trim()),
+  });
 
   useEffect(() => {
-    Promise.all([api.allPatients(), api.population(), api.appointmentQueue(14).catch(() => [])])
-      .then(([p, pop, q]) => { setPatients(p); setPopulation(pop); setQueue(q); })
+    Promise.all([
+      api.allPatients(),
+      api.population(),
+      api.appointmentQueue(14).catch(() => []),
+      api.providerEscalations().catch(() => []),
+    ])
+      .then(([p, pop, q, esc]) => { setPatients(p); setPopulation(pop); setQueue(q); setEscalations(esc); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // Live triage: new caregiver escalations appear while the portal is open.
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      try {
+        const esc = await api.providerEscalations();
+        setEscalations((prev) => {
+          const prevIds = new Set(prev.map((e) => e.id));
+          const fresh = esc.find((e) => !prevIds.has(e.id) && e.status === "open");
+          if (fresh) toast.error(`🚨 Urgent review requested for ${fresh.patient_name}`);
+          return esc;
+        });
+        // Escalations change risk scores — keep the triage ranking current.
+        setPatients(await api.allPatients());
+      } catch { /* transient — next poll retries */ }
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function selectPatient(patient) {
     setSelectedPatient(patient);
     setDetailTab("summary");
     setSummary({ patient });
     setSummaryLoading(true);
+    setInsights(null);
+    setAnalytics(null);
+    api.patientAnalytics(patient.id).then(setAnalytics).catch(() => setAnalytics(null));
     try {
       const res = await api.aiSummary(patient.id);
       setSummary({ patient, text: res.summary });
@@ -53,6 +93,30 @@ export default function DoctorDashboard() {
       setSummary({ patient, text: `⚠️ ${e.message}` });
     } finally {
       setSummaryLoading(false);
+    }
+  }
+
+  async function loadInsights() {
+    if (!selectedPatient) return;
+    setInsightsLoading(true);
+    try {
+      const res = await api.caseInsights(selectedPatient.id);
+      setInsights(res);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setInsightsLoading(false);
+    }
+  }
+
+  async function handleEscalation(id, status) {
+    try {
+      await api.setEscalationStatus(id, status, user.id);
+      setEscalations(await api.providerEscalations());
+      setPatients(await api.allPatients());
+      toast.success(status === "resolved" ? "Resolved — the caregiver has been notified" : "Acknowledged — caregiver notified you're on it");
+    } catch (e) {
+      toast.error(e.message);
     }
   }
 
@@ -83,6 +147,46 @@ export default function DoctorDashboard() {
     <div className="clinical-shell">
       {/* LEFT: patient roster + KPIs + queue */}
       <div className="clinical-rail">
+        {escalations.filter((e) => e.status !== "resolved").length > 0 && (
+          <motion.div
+            className="card"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ background: "var(--danger-100)", borderColor: "var(--danger)", padding: 14 }}
+          >
+            <h3 className="card-title" style={{ fontSize: ".9rem" }}>🚨 Urgent reviews requested</h3>
+            {escalations.filter((e) => e.status !== "resolved").map((e) => (
+              <div key={e.id} style={{ padding: "8px 0", borderTop: "1px solid var(--danger)", marginTop: 6 }}>
+                <button
+                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit", width: "100%" }}
+                  onClick={() => {
+                    const p = patients.find((x) => x.id === e.patient_id);
+                    if (p) selectPatient(p);
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: ".85rem" }}>
+                    {e.patient_name}
+                    {e.status === "acknowledged" && <span className="badge" style={{ marginLeft: 6 }}>reviewing</span>}
+                  </div>
+                  <div className="muted" style={{ fontSize: ".78rem", margin: "2px 0 6px" }}>
+                    “{e.reason}” — {e.raised_by_name}
+                  </div>
+                </button>
+                <div className="row" style={{ gap: 6 }}>
+                  {e.status === "open" && (
+                    <button className="btn ghost sm" style={{ fontSize: ".72rem" }} onClick={() => handleEscalation(e.id, "acknowledged")}>
+                      👀 Acknowledge
+                    </button>
+                  )}
+                  <button className="btn danger sm" style={{ fontSize: ".72rem" }} onClick={() => handleEscalation(e.id, "resolved")}>
+                    ✓ Mark reviewed
+                  </button>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        )}
+
         {population && (
           <div className="kpi-strip">
             <div><strong>{population.total_patients}</strong><span>Patients</span></div>
@@ -95,7 +199,7 @@ export default function DoctorDashboard() {
 
         <input
           className="clinical-search"
-          placeholder="🔍 Search patients…"
+          placeholder="🔍 Search patients (ranked by risk)…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -104,20 +208,26 @@ export default function DoctorDashboard() {
           {filteredPatients.length === 0 ? (
             <EmptyState icon="👥" title="No patients found" />
           ) : filteredPatients.map((p) => {
-            const risk = riskLevel(p.adherence_rate);
+            const risk = RISK_STYLES[p.risk_level] || RISK_STYLES.stable;
             const active = selectedPatient?.id === p.id;
+            const why = p.risk_reasons?.length ? `${risk.label}: ${p.risk_reasons.join(" · ")}` : risk.label;
             return (
               <button
                 key={p.id}
                 className={"clinical-list-item" + (active ? " active" : "")}
                 onClick={() => selectPatient(p)}
+                title={why}
               >
-                <span className="risk-dot" style={{ background: risk.color }} title={risk.label} />
+                <span className="risk-dot" style={{ background: risk.color }} />
                 <span className="clinical-list-info">
                   <span className="clinical-list-name">{p.name}</span>
-                  <span className="clinical-list-sub">{p.conditions || "No conditions recorded"}</span>
+                  <span className="clinical-list-sub">
+                    {p.risk_reasons?.length ? p.risk_reasons[0] : p.conditions || "No conditions recorded"}
+                  </span>
                 </span>
-                <span className="clinical-list-pct">{Math.round(p.adherence_rate * 100)}%</span>
+                <span className="clinical-list-pct" style={p.risk_score >= 50 ? { color: "var(--danger)" } : undefined}>
+                  {p.risk_score > 0 ? `⚠ ${p.risk_score}` : `${Math.round(p.adherence_rate * 100)}%`}
+                </span>
               </button>
             );
           })}
@@ -212,6 +322,8 @@ export default function DoctorDashboard() {
 
               <div className="tabs">
                 <button className={"tab" + (detailTab === "summary" ? " active" : "")} onClick={() => setDetailTab("summary")}>🧠 AI Summary</button>
+                <button className={"tab" + (detailTab === "trends" ? " active" : "")} onClick={() => setDetailTab("trends")}>📈 Trends</button>
+                <button className={"tab" + (detailTab === "insights" ? " active" : "")} onClick={() => setDetailTab("insights")}>🔍 Case Insights</button>
                 <button className={"tab" + (detailTab === "notes" ? " active" : "")} onClick={() => setDetailTab("notes")}>📝 Clinical Notes</button>
                 <button className={"tab" + (detailTab === "schedule" ? " active" : "")} onClick={() => setDetailTab("schedule")}>📅 Schedule</button>
               </div>
@@ -227,13 +339,93 @@ export default function DoctorDashboard() {
                 </div>
               )}
 
+              {detailTab === "trends" && (
+                <div className="grid" style={{ gap: 20 }}>
+                  <div className="card">
+                    <h3 className="card-title">Pain trajectory</h3>
+                    <p className="card-sub">Reported pain levels over recent check-ins</p>
+                    {!analytics?.pain_series?.length ? (
+                      <EmptyState icon="📈" title="No pain data recorded yet" />
+                    ) : (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <LineChart data={analytics.pain_series} margin={{ top: 10, right: 12, left: -24, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke={gridColor} />
+                          <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} stroke={gridColor} />
+                          <Tooltip formatter={(v) => [`${v}/10`, "Pain"]} contentStyle={{ borderRadius: 12, border: "none" }} />
+                          <Line type="monotone" dataKey="pain" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                  <div className="card">
+                    <h3 className="card-title">Medication doses — last 14 days</h3>
+                    <p className="card-sub">Taken vs missed, per day</p>
+                    {!analytics?.dose_series?.length ? (
+                      <EmptyState icon="💊" title="No dose logs yet" />
+                    ) : (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={analytics.dose_series} margin={{ top: 10, right: 12, left: -24, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                          <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke={gridColor} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke={gridColor} />
+                          <Tooltip contentStyle={{ borderRadius: 12, border: "none" }} />
+                          <Legend />
+                          <Bar dataKey="taken" stackId="d" fill="#22c55e" name="Taken" radius={[0, 0, 0, 0]} />
+                          <Bar dataKey="missed" stackId="d" fill="#ef4444" name="Missed" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {detailTab === "insights" && (
+                <div className="card">
+                  <div className="row between" style={{ flexWrap: "wrap", gap: 10 }}>
+                    <div>
+                      <h3 className="card-title">🔍 Learning from past cases</h3>
+                      <p className="card-sub">
+                        AI compares this patient with anonymized outcomes from your panel — what worked, what failed, and how to avoid repeating it
+                      </p>
+                    </div>
+                    {insights && <span className="badge">{insights.cases_analyzed} cases analyzed</span>}
+                  </div>
+                  {insightsLoading ? (
+                    <div className="pulse muted" style={{ padding: "16px 0" }}>🔍 Comparing outcomes across the panel…</div>
+                  ) : insights ? (
+                    <div style={{ lineHeight: 1.65 }}><Markdown text={insights.insights} /></div>
+                  ) : (
+                    <button className="btn" onClick={loadInsights} style={{ marginTop: 8 }}>
+                      🔍 Analyze similar cases
+                    </button>
+                  )}
+                </div>
+              )}
+
               {detailTab === "notes" && (
                 <div className="card">
-                  <p className="card-sub" style={{ marginTop: 0 }}>Private notes — saved on this device</p>
+                  <div className="row between" style={{ flexWrap: "wrap", gap: 10 }}>
+                    <p className="card-sub" style={{ marginTop: 0 }}>Private notes — saved on this device</p>
+                    {voice.supported && (
+                      <button
+                        className={"btn sm " + (voice.listening ? "danger" : "ghost")}
+                        onClick={() => (voice.listening ? voice.stop() : voice.start())}
+                        title="Dictate notes hands-free"
+                      >
+                        {voice.listening ? "⏹ Stop dictation" : "🎙️ Dictate"}
+                      </button>
+                    )}
+                  </div>
+                  {voice.listening && voice.transcript && (
+                    <div className="muted pulse" style={{ fontSize: ".85rem", marginBottom: 8 }}>
+                      “{voice.transcript}…”
+                    </div>
+                  )}
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Type clinical notes here…"
+                    placeholder="Type clinical notes here, or tap 🎙️ Dictate…"
                     style={{ minHeight: 220, resize: "vertical" }}
                   />
                 </div>

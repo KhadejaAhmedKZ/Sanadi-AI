@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
@@ -6,14 +6,17 @@ import { api } from "../api/client.js";
 import { StatCard, ErrorNote, EmptyState } from "../components/ui.jsx";
 import { SkeletonStatGrid, SkeletonList } from "../components/Skeleton.jsx";
 import MiniCalendar from "../components/MiniCalendar.jsx";
+import Markdown from "../components/Markdown.jsx";
 import { ReminderList } from "../components/CareTools.jsx";
 
 const SCOPES = ["medications", "appointments", "symptoms", "safety"];
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "alerts", label: "Alerts" },
+  { id: "understand", label: "🧠 Understand" },
   { id: "calendar", label: "Calendar & Routine" },
 ];
+const POLL_MS = 20000; // live alert polling
 
 function statusFromOverview(overview, urgentCount) {
   if (!overview) return { level: "unknown", label: "No data", color: "var(--muted)" };
@@ -39,6 +42,18 @@ export default function CaregiverDashboard() {
   const [grants, setGrants] = useState({ medications: true, appointments: true, symptoms: true, safety: true });
   const [linking, setLinking] = useState(false);
 
+  // Escalation (urgent review request)
+  const [escOpen, setEscOpen] = useState(false);
+  const [escReason, setEscReason] = useState("");
+  const [escSending, setEscSending] = useState(false);
+
+  // AI education guide
+  const [guide, setGuide] = useState("");
+  const [guideLoading, setGuideLoading] = useState(false);
+  const [guideError, setGuideError] = useState("");
+
+  const knownIdsRef = useRef(null); // notification ids seen so far, for "new alert" toasts
+
   async function loadOverview() {
     setLoading(true);
     setError("");
@@ -49,10 +64,63 @@ export default function CaregiverDashboard() {
       ]);
       setOverview(ov);
       setNotifs(nt);
+      knownIdsRef.current = new Set(nt.map((n) => n.id));
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   }
   useEffect(() => { loadOverview(); }, [patientId]);
+
+  // Live alerts: poll notifications so safety events appear while you watch.
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      try {
+        const nt = await api.caregiverNotifications(caregiverId);
+        const known = knownIdsRef.current;
+        if (known) {
+          const fresh = nt.filter((n) => !known.has(n.id));
+          const freshUrgent = fresh.find((n) => n.urgent);
+          if (freshUrgent) toast.error(`🚨 ${freshUrgent.title}`);
+          else if (fresh.length) toast.info?.(fresh[0].title);
+        }
+        knownIdsRef.current = new Set(nt.map((n) => n.id));
+        setNotifs(nt);
+      } catch { /* transient network issue — next poll retries */ }
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [caregiverId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function sendEscalation() {
+    const reason = escReason.trim();
+    if (!reason) return;
+    setEscSending(true);
+    try {
+      await api.raiseEscalation({ caregiver_id: caregiverId, patient_id: patientId, reason });
+      setEscOpen(false);
+      setEscReason("");
+      toast.success("Sent — the care team has been notified and will review urgently");
+    } catch (e) { toast.error(e.message); }
+    finally { setEscSending(false); }
+  }
+
+  // Load the AI guide when the Understand tab opens (cached per patient per day).
+  useEffect(() => {
+    if (tab !== "understand" || !overview || guide || guideLoading) return;
+    const cacheKey = `sanadi_edu_${patientId}_${new Date().toDateString()}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) { setGuide(cached); return; }
+    setGuideLoading(true);
+    setGuideError("");
+    api.caregiverEducation(caregiverId, patientId)
+      .then((res) => {
+        setGuide(res.guide);
+        try { localStorage.setItem(cacheKey, res.guide); } catch { /* full */ }
+      })
+      .catch((e) => setGuideError(e.message))
+      .finally(() => setGuideLoading(false));
+  }, [tab, overview]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset per-patient AI state when switching patients.
+  useEffect(() => { setGuide(""); setGuideError(""); setEscOpen(false); }, [patientId]);
 
   async function link() {
     setLinking(true);
@@ -106,7 +174,7 @@ export default function CaregiverDashboard() {
             style={{ overflow: "hidden" }}
           >
             <h3 className="card-title">Connect to a patient</h3>
-            <p className="card-sub">Enter the patient's ID and the access they've granted you (demo patient ID: 1 or 2)</p>
+            <p className="card-sub">Enter the patient's ID and the access they've granted you (demo patient IDs: 1, 2 or 3)</p>
             <label className="field" style={{ maxWidth: 220 }}>
               <span>Patient ID</span>
               <input type="number" min="1" value={patientId} onChange={(e) => setPatientId(Number(e.target.value) || 1)} />
@@ -132,6 +200,67 @@ export default function CaregiverDashboard() {
         <EmptyState icon="🔒" title="No access yet" hint="Use 'Switch patient / access' above to connect." />
       ) : (
         <>
+          {urgentCount > 0 && (
+            <motion.div
+              className="card"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ background: "var(--danger-100)", borderColor: "var(--danger)" }}
+            >
+              <div className="row between" style={{ flexWrap: "wrap", gap: 12 }}>
+                <div className="lead" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <div className="dot" style={{ fontSize: "1.4rem" }}>🚨</div>
+                  <div>
+                    <div style={{ fontWeight: 800 }}>{notifs.find((n) => n.urgent)?.title}</div>
+                    <div className="muted" style={{ fontSize: ".85rem" }}>
+                      {notifs.find((n) => n.urgent)?.body}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  className="btn danger sm"
+                  onClick={() => {
+                    setEscReason(notifs.find((n) => n.urgent)?.title || "");
+                    setEscOpen(true);
+                  }}
+                >
+                  🚑 Request urgent review
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          <AnimatePresence>
+            {escOpen && (
+              <motion.div
+                className="card"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{ overflow: "hidden" }}
+              >
+                <h3 className="card-title">🚑 Request urgent review</h3>
+                <p className="card-sub">
+                  This goes straight to the top of the care team's queue. Dr. will see it immediately
+                  and you'll be notified when it's reviewed.
+                </p>
+                <textarea
+                  value={escReason}
+                  onChange={(e) => setEscReason(e.target.value)}
+                  placeholder={`Describe what's worrying you about ${overview.patient.name}…`}
+                  maxLength={400}
+                  style={{ minHeight: 90, resize: "vertical" }}
+                />
+                <div className="row" style={{ marginTop: 10, gap: 10 }}>
+                  <button className="btn danger" onClick={sendEscalation} disabled={escSending || !escReason.trim()}>
+                    {escSending ? "Sending…" : "Send to care team"}
+                  </button>
+                  <button className="btn ghost" onClick={() => setEscOpen(false)}>Cancel</button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="tabs">
             {TABS.map((t) => (
               <button key={t.id} className={"tab" + (tab === t.id ? " active" : "")} onClick={() => setTab(t.id)}>
@@ -172,8 +301,15 @@ export default function CaregiverDashboard() {
 
           {tab === "alerts" && (
             <motion.div className="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <h3 className="card-title">🔔 Safety alerts</h3>
-              <p className="card-sub">Notifications from the patient's account</p>
+              <div className="row between" style={{ flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <h3 className="card-title">🔔 Safety alerts</h3>
+                  <p className="card-sub">Live — checks for new alerts every 20 seconds</p>
+                </div>
+                <button className="btn danger sm" onClick={() => setEscOpen(true)}>
+                  🚑 Request urgent review
+                </button>
+              </div>
               {notifs.length === 0 ? (
                 <EmptyState icon="🔕" title="No alerts" hint="Emergency events appear here." />
               ) : notifs.map((n) => (
@@ -188,6 +324,39 @@ export default function CaregiverDashboard() {
                   {n.urgent && <span className="badge red">Urgent</span>}
                 </div>
               ))}
+            </motion.div>
+          )}
+
+          {tab === "understand" && (
+            <motion.div className="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <div className="row between" style={{ flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <h3 className="card-title">🧠 Understanding {overview.patient.name.split(" ")[0]}'s condition</h3>
+                  <p className="card-sub">
+                    What's normal, what to know, and when to actually worry — written for you, not for doctors
+                  </p>
+                </div>
+                <button
+                  className="btn ghost sm"
+                  disabled={guideLoading}
+                  onClick={() => {
+                    localStorage.removeItem(`sanadi_edu_${patientId}_${new Date().toDateString()}`);
+                    setGuide("");
+                    setGuideError("");
+                  }}
+                >
+                  ↻ Refresh
+                </button>
+              </div>
+              {guideLoading ? (
+                <div className="pulse muted" style={{ padding: "18px 0" }}>
+                  🧠 Writing a guide based on {overview.patient.name.split(" ")[0]}'s condition and recent symptoms…
+                </div>
+              ) : guideError ? (
+                <ErrorNote message={guideError} />
+              ) : guide ? (
+                <div style={{ lineHeight: 1.65 }}><Markdown text={guide} /></div>
+              ) : null}
             </motion.div>
           )}
 
