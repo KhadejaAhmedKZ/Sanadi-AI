@@ -32,11 +32,15 @@ export default function Appointments() {
     setSaving(true);
     setError("");
     try {
+      // Send the datetime-local value as-is (wall-clock time). Converting via
+      // toISOString() would shift it to UTC, then the naive value would be
+      // displayed back as local time — showing the wrong hour to anyone not
+      // in UTC.
       await api.bookAppointment({
         patient_id: patientId,
         department: form.department,
         reason: form.reason,
-        scheduled_for: new Date(form.scheduled_for).toISOString(),
+        scheduled_for: form.scheduled_for,
       });
       setForm({ department: "General", reason: "", scheduled_for: "" });
       await load();

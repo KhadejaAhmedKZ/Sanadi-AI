@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, date
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from backend.models import AppointmentStatus, UserRole
 
@@ -104,7 +104,7 @@ class AppointmentOut(BaseModel):
 class SymptomCreate(BaseModel):
     patient_id: int
     description: str
-    pain_level: int | None = None
+    pain_level: int | None = Field(default=None, ge=0, le=10)
 
 
 class SymptomOut(BaseModel):

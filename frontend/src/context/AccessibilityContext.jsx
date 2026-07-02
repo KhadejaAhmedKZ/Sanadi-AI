@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const AccessibilityContext = createContext(null);
 
@@ -27,21 +27,28 @@ export function AccessibilityProvider({ children }) {
     localStorage.setItem("sanadi_a11y", JSON.stringify(settings));
   }, [settings]);
 
-  const toggle = (key) => setSettings((s) => ({ ...s, [key]: !s[key] }));
+  // Stable identities: consumers key effects/cleanups on these (e.g. the
+  // breathing exercise cancels speech on `stopSpeaking` change), so they must
+  // not be recreated whenever a setting toggles.
+  const toggle = useCallback((key) => setSettings((s) => ({ ...s, [key]: !s[key] })), []);
 
-  // Text-to-speech helper using the Web Speech API.
-  const speak = (text) => {
+  const speak = useCallback((text) => {
     if (!("speechSynthesis" in window) || !text) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 0.98;
     window.speechSynthesis.speak(utter);
-  };
+  }, []);
 
-  const stopSpeaking = () => window.speechSynthesis?.cancel();
+  const stopSpeaking = useCallback(() => window.speechSynthesis?.cancel(), []);
+
+  const value = useMemo(
+    () => ({ settings, toggle, speak, stopSpeaking }),
+    [settings, toggle, speak, stopSpeaking]
+  );
 
   return (
-    <AccessibilityContext.Provider value={{ settings, toggle, speak, stopSpeaking }}>
+    <AccessibilityContext.Provider value={value}>
       {children}
     </AccessibilityContext.Provider>
   );

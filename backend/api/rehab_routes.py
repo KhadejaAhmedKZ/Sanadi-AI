@@ -1,6 +1,6 @@
 """Rehabilitation / VR physiotherapy endpoints."""
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
@@ -12,10 +12,10 @@ router = APIRouter(prefix="/rehab", tags=["rehabilitation"])
 class SessionLog(BaseModel):
     patient_id: int
     exercise: str
-    reps_completed: int
-    reps_target: int
+    reps_completed: int = Field(ge=0, le=1000)
+    reps_target: int = Field(gt=0, le=1000)
     difficulty: str = "easy"
-    pain_level: int | None = None
+    pain_level: int | None = Field(default=None, ge=0, le=10)
 
 
 @router.get("/exercises")

@@ -29,8 +29,8 @@ class EngagementAgent(BaseAgent):
                 log = patient_service.log_symptom(
                     ctx.db,
                     patient_id=ctx.patient.id,
-                    description=extracted.get("description", ctx.message),
-                    pain_level=extracted.get("pain_level"),
+                    description=str(extracted.get("description") or ctx.message)[:500],
+                    pain_level=patient_service.clamp_pain(extracted.get("pain_level")),
                 )
                 data["symptom_logged"] = {
                     "id": log.id,

@@ -115,8 +115,16 @@ class Orchestrator:
             return {"reply": reply, "emergency": False, "agents_used": [], "contributions": []}
 
         emergency = bool(result.get("emergency"))
-        reply = result.get("reply", "")
-        agents = result.get("agents") or (["safety"] if emergency else DEFAULT_AGENTS)
+        reply = str(result.get("reply") or "")
+        # Sanitize model output: keep only known agent keys, always a list —
+        # the frontend maps over this, so a stray string/object would crash it.
+        raw_agents = result.get("agents")
+        agents = [
+            a for a in (raw_agents if isinstance(raw_agents, list) else [])
+            if isinstance(a, str) and (a in SPECIALISTS or a == "safety")
+        ]
+        if not agents:
+            agents = ["safety"] if emergency else list(DEFAULT_AGENTS)
 
         # Execute structured side-effects locally (no extra API calls).
         if ctx.patient and not emergency:
@@ -128,15 +136,16 @@ class Orchestrator:
                         db,
                         patient_id=patient_id,
                         scheduled_for=when,
-                        department=action.get("department", "General"),
-                        reason=action.get("reason", ""),
+                        department=str(action.get("department") or "General")[:120],
+                        reason=str(action.get("reason") or "")[:300],
                     )
                     if "operations" not in agents:
                         agents.append("operations")
             sym = result.get("symptom")
             if isinstance(sym, dict) and sym.get("description"):
                 patient_service.log_symptom(
-                    db, patient_id, sym["description"], sym.get("pain_level")
+                    db, patient_id, str(sym["description"])[:500],
+                    patient_service.clamp_pain(sym.get("pain_level")),
                 )
                 if "engagement" not in agents:
                     agents.append("engagement")

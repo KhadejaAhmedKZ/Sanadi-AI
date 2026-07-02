@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const ICONS = ["💊", "🩺", "❤️", "🧠", "🦴", "🩹"];
 
@@ -15,8 +15,14 @@ export default function MemoryGame() {
   const [flipped, setFlipped] = useState([]); // indices currently face-up (max 2)
   const [moves, setMoves] = useState(0);
   const [locked, setLocked] = useState(false);
+  const timeoutRef = useRef(null);
+
+  // Clear any in-flight flip-back timer on restart/unmount, otherwise it
+  // fires against the freshly shuffled deck and corrupts its state.
+  useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
   function reset() {
+    clearTimeout(timeoutRef.current);
     setCards(shuffledDeck());
     setFlipped([]);
     setMoves(0);
@@ -32,13 +38,13 @@ export default function MemoryGame() {
       setLocked(true);
       const [a, b] = next;
       if (cards[a].icon === cards[b].icon) {
-        setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           setCards((cs) => cs.map((c, i) => (i === a || i === b ? { ...c, matched: true } : c)));
           setFlipped([]);
           setLocked(false);
         }, 450);
       } else {
-        setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           setFlipped([]);
           setLocked(false);
         }, 850);

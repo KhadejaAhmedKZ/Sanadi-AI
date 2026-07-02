@@ -26,6 +26,14 @@ def patient_summary(user: User) -> str:
     return " | ".join(parts)
 
 
+def clamp_pain(value):
+    """Coerce an untrusted (e.g. LLM-extracted) pain level to a valid int 0-10, else None."""
+    try:
+        return max(0, min(10, int(value)))
+    except (TypeError, ValueError):
+        return None
+
+
 def log_symptom(
     db: Session, patient_id: int, description: str, pain_level: int | None = None
 ) -> SymptomLog:
@@ -53,12 +61,27 @@ def recent_symptoms(db: Session, patient_id: int, limit: int = 5) -> list[Sympto
 def link_caregiver(
     db: Session, caregiver_id: int, patient_id: int, scopes: list[str]
 ) -> CareLink:
-    link = CareLink(
-        caregiver_id=caregiver_id,
-        patient_id=patient_id,
-        scopes=",".join(scopes),
+    """Create or update the caregiver↔patient link (one row per pair).
+
+    Re-granting must UPDATE the existing link: inserting a duplicate would
+    leave scope reads pinned to the first row (new scopes silently ignored)
+    and double-send caregiver safety notifications.
+    """
+    link = db.scalar(
+        select(CareLink).where(
+            CareLink.caregiver_id == caregiver_id,
+            CareLink.patient_id == patient_id,
+        )
     )
-    db.add(link)
+    if link:
+        link.scopes = ",".join(scopes)
+    else:
+        link = CareLink(
+            caregiver_id=caregiver_id,
+            patient_id=patient_id,
+            scopes=",".join(scopes),
+        )
+        db.add(link)
     db.commit()
     db.refresh(link)
     return link

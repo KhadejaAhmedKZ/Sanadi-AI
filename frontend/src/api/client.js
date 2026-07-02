@@ -3,23 +3,49 @@
 
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
+const NETWORK_ERROR_MSG =
+  "Can't reach the server — it may be waking up (free hosting sleeps when idle). " +
+  "Please wait ~30 seconds and try again.";
+
+// Parse a response body defensively: hosts/proxies can return HTML error pages
+// (e.g. a 502 while the backend wakes), which would crash JSON.parse with
+// "Unexpected token '<'".
+async function parseBody(res) {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function errorFrom(res, data) {
+  const message =
+    data?.detail ||
+    (res.status >= 500
+      ? "The server hit a problem — please try again in a moment."
+      : res.statusText || "Request failed");
+  return new Error(typeof message === "string" ? message : JSON.stringify(message));
+}
+
 async function request(path, { method = "GET", body, token } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-
-  if (!res.ok) {
-    const message = data?.detail || res.statusText || "Request failed";
-    throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+  let res;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new Error(NETWORK_ERROR_MSG);
   }
+
+  const data = await parseBody(res);
+  if (!res.ok) throw errorFrom(res, data);
   return data;
 }
 
@@ -37,13 +63,14 @@ export const api = {
     form.append("patient_id", patient_id);
     form.append("message", message || "");
     form.append("image", file);
-    const res = await fetch(`${BASE}/chat/image`, { method: "POST", body: form });
-    const text = await res.text();
-    const data = text ? JSON.parse(text) : null;
-    if (!res.ok) {
-      const msg = data?.detail || res.statusText || "Request failed";
-      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    let res;
+    try {
+      res = await fetch(`${BASE}/chat/image`, { method: "POST", body: form });
+    } catch {
+      throw new Error(NETWORK_ERROR_MSG);
     }
+    const data = await parseBody(res);
+    if (!res.ok) throw errorFrom(res, data);
     return data;
   },
 

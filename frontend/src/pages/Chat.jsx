@@ -50,9 +50,13 @@ export default function Chat() {
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [analyzingImage, setAnalyzingImage] = useState(false);
   const [pendingImage, setPendingImage] = useState(null); // { file, previewUrl }
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
+  // Object URLs stay alive while the chat is mounted (sent-message bubbles
+  // keep using them); revoke everything only on unmount.
+  const objectUrlsRef = useRef([]);
 
   const voice = useVoice({ onResult: (t) => setInput(t) });
 
@@ -62,9 +66,15 @@ export default function Chat() {
 
   useEffect(() => {
     return () => {
-      if (pendingImage) URL.revokeObjectURL(pendingImage.previewUrl);
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrlsRef.current = [];
     };
-  }, [pendingImage]);
+  }, []);
+
+  function discardUrl(url) {
+    URL.revokeObjectURL(url);
+    objectUrlsRef.current = objectUrlsRef.current.filter((u) => u !== url);
+  }
 
   function onPickImage(e) {
     const file = e.target.files?.[0];
@@ -78,10 +88,15 @@ export default function Chat() {
       setMessages((m) => [...m, { role: "bot", text: "⚠️ That image is too large (max 8MB).", agents: [], time: timestamp() }]);
       return;
     }
-    setPendingImage({ file, previewUrl: URL.createObjectURL(file) });
+    // Replacing an unsent image? Its URL is safe to free immediately.
+    if (pendingImage) discardUrl(pendingImage.previewUrl);
+    const previewUrl = URL.createObjectURL(file);
+    objectUrlsRef.current.push(previewUrl);
+    setPendingImage({ file, previewUrl });
   }
 
   function removePendingImage() {
+    if (pendingImage) discardUrl(pendingImage.previewUrl);
     setPendingImage(null);
   }
 
@@ -132,6 +147,7 @@ export default function Chat() {
     setInput("");
     setPendingImage(null);
     setSending(true);
+    setAnalyzingImage(true);
     try {
       const res = await api.chatWithImage(user.id, file, caption);
       const botMsg = { role: "bot", text: res.reply, agents: res.agents_used, emergency: res.emergency, time: timestamp() };
@@ -141,6 +157,7 @@ export default function Chat() {
       setMessages((m) => [...m, { role: "bot", text: `⚠️ ${err.message}`, agents: [], time: timestamp() }]);
     } finally {
       setSending(false);
+      setAnalyzingImage(false);
     }
   }
 
@@ -185,7 +202,7 @@ export default function Chat() {
           <motion.div className="msg bot" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="typing-indicator">
               <span /><span /><span />
-              <span style={{ marginLeft: 8 }}>{pendingImage ? "Analyzing your photo…" : "Sanadi is thinking…"}</span>
+              <span style={{ marginLeft: 8 }}>{analyzingImage ? "Analyzing your photo…" : "Sanadi is thinking…"}</span>
             </div>
             <div style={{ marginTop: 10 }}>
               <AgentStatusBoard phase="thinking" />

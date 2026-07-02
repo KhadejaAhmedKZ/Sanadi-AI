@@ -60,5 +60,9 @@ def add_med(payload: MedicationCreate, db: Session = Depends(get_db)):
 
 @router.post("/medications/log")
 def log_dose(payload: MedicationTake, db: Session = Depends(get_db)):
+    from backend.models import Medication
+
+    if not db.get(Medication, payload.medication_id):
+        raise HTTPException(status_code=404, detail="Medication not found")
     log = medication_service.log_dose(db, payload.medication_id, payload.taken)
     return {"id": log.id, "taken": log.taken, "logged_at": log.logged_at}

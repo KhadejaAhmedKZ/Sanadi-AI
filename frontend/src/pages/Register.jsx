@@ -26,10 +26,12 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
+      const isPatient = form.role === "patient";
       await register({
         ...form,
-        conditions: form.conditions || null,
-        accessibility_needs: form.accessibility_needs || null,
+        // Patient-only fields: drop any values typed before switching role.
+        conditions: isPatient ? form.conditions || null : null,
+        accessibility_needs: isPatient ? form.accessibility_needs || null : null,
       });
       navigate("/");
     } catch (err) {

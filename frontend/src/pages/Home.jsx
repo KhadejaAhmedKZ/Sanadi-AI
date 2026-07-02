@@ -47,8 +47,11 @@ export default function Home() {
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   const wellness = dailyWellness(user?.id ?? 0);
 
-  const avgPain = dash?.recent_symptoms?.length
-    ? dash.recent_symptoms.filter((s) => s.pain_level != null).reduce((sum, s, _, arr) => sum + s.pain_level / arr.length, 0)
+  const painLevels = (dash?.recent_symptoms ?? [])
+    .filter((s) => s.pain_level != null)
+    .map((s) => s.pain_level);
+  const avgPain = painLevels.length
+    ? painLevels.reduce((a, b) => a + b, 0) / painLevels.length
     : null;
   const healthScore = computeHealthScore({
     adherenceRate: dash?.adherence_rate,
