@@ -1,0 +1,1 @@
+import{r as o}from"./index-BL3XFWIB.js";function u(t,e){const[r,c]=o.useState(()=>{try{const a=localStorage.getItem(t);return a?JSON.parse(a):e}catch{return e}});return o.useEffect(()=>{try{localStorage.setItem(t,JSON.stringify(r))}catch{}},[t,r]),[r,c]}export{u};
