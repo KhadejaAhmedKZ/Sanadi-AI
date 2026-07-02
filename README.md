@@ -4,9 +4,14 @@
 
 Sanadi AI is a full-stack, **deployed** healthcare platform: a FastAPI + Gemini
 multi-agent backend, and a premium, animated React frontend with role-based
-portals for patients, caregivers, and providers — AI chat with image analysis,
-an interactive VR rehabilitation module, six specialized care modules, a full
-hands-free/screen-reader accessibility suite, dark mode, and live charts.
+portals for patients, caregivers, and providers. **Every role gets its own
+AI** — a multi-agent companion for patients (with photo analysis), a
+care-support assistant for family caregivers, and a clinical copilot for
+providers — plus a live **connected-care escalation loop** (patient emergency
+→ caregiver alert → provider triage → caregiver notified back), AI risk
+triage, outcome-based case insights, an interactive VR rehabilitation module,
+six specialized care modules, a full hands-free/screen-reader accessibility
+suite, dark mode, and live charts.
 
 ## 🌐 Live demo
 
@@ -19,9 +24,17 @@ Demo accounts (password `demo1234` for all):
 
 | Role | Email | Notes |
 |------|-------|-------|
-| 👤 Patient | `sara@example.com` | Full patient experience |
+| 👤 Patient | `sara@example.com` | Recovering well — improving pain trend, high adherence |
+| 👤 Patient | `ahmed@example.com` | The **high-risk demo**: rising pain, 43% adherence, flagged by triage |
+| 👤 Patient | `fatima@example.com` | Fully recovered — the success case the AI learns from |
 | 👨‍👩‍👧 Caregiver | `care@example.com` | Pre-linked to Sara with all permission scopes |
-| 👨‍⚕️ Provider | `doctor@example.com` | Sees all patients |
+| 👨‍⚕️ Provider | `doctor@example.com` | Sees the whole panel, risk-ranked |
+
+The login page also has **one-click demo chips** — tap "Continue as
+Patient/Caregiver/Provider" and you're in, no typing. Every patient ships
+with **three weeks of seeded history** (symptoms, dose logs, rehab sessions)
+so trends, risk scores, and case insights show real trajectories out of the
+box.
 
 > The backend is on Render's free tier and sleeps when idle — the first request
 > after a nap takes ~30s, then it's fast. AI chat is limited to ~5
@@ -56,6 +69,16 @@ locked out of all of them. Sanadi AI addresses this directly:
   patients, caregivers, and providers reflect how care actually happens —
   caregivers only see what a patient explicitly grants, and providers get
   AI-generated pre-visit summaries that save real clinical time.
+- **A closed escalation loop, not three silos.** A worrying event travels
+  through every role: the patient's message triggers a caregiver safety
+  alert (live, within ~20s), the caregiver requests an urgent review with one
+  button, it lands flagged at the top of the provider's queue and bumps the
+  patient's risk score, and resolving it notifies the caregiver back.
+- **An AI for every seat at the table.** Patients get the multi-agent
+  companion; caregivers get a support assistant that knows (only) their
+  permitted patient data and answers "is this normal?"; providers get a
+  clinical copilot over the live panel that answers "who needs attention
+  first?".
 
 ### Technical Execution — 25%
 
@@ -73,8 +96,14 @@ locked out of all of them. Sanadi AI addresses this directly:
   pipeline as text.
 - **Real data model**, not mocked JSON: SQLAlchemy models for users,
   medications + dose logs, appointments, symptoms, rehab sessions, care
-  links, and conversation history, with adherence/analytics computed from
-  actual logged data.
+  links, escalations, and conversation history, with adherence/analytics
+  computed from actual logged data.
+- **Hybrid AI + rules where each is strongest.** Risk triage is deterministic
+  and free (rule-based scoring over adherence, pain trajectory, escalations,
+  rehab drop-off — recomputed on every load), while the LLM handles what
+  rules can't: explanations, case-outcome insights, and conversation. AI
+  outputs that feed the database (extracted pain levels, agent lists) are
+  clamped and sanitized — model output is never trusted blindly.
 - **Verified, not assumed.** The rep-matching logic for the memory game, the
   breathing-exercise state machine, and the emergency safety net were each
   checked with scripted simulations before shipping; every new feature was
@@ -98,7 +127,11 @@ locked out of all of them. Sanadi AI addresses this directly:
   tools they can *use*, not another wall of text.
 - **Accessible by construction**: large-text and high-contrast modes, full
   keyboard/screen-reader support, and hands-free face control were tested as
-  first-class interaction paths, not bolted on.
+  first-class interaction paths, not bolted on — then the whole UI was
+  audited against a 99-point UX/accessibility checklist (visible focus
+  rings, reduced-motion support, skip link, 44px touch targets, WCAG
+  contrast in both themes, vector chrome iconography) and every failure was
+  fixed.
 - Toasts, skeleton loading states, empty states, and a proper 404/offline
   experience — the small details that separate a usable product from a demo.
 
@@ -114,7 +147,11 @@ locked out of all of them. Sanadi AI addresses this directly:
   needs urgent care, and always closes with a reminder to see a professional
   — enforced in the system prompt, not left to chance.
 - **Privacy by design**: caregivers only ever see the data scopes a patient
-  explicitly grants (`medications`, `appointments`, `symptoms`, `safety`);
+  explicitly grants (`medications`, `appointments`, `symptoms`, `safety`) —
+  and the caregiver's AI assistant is grounded in exactly that same scoped
+  context, so the AI cannot leak what the portal wouldn't show. Case
+  insights compare patients as anonymized snapshots ("Case A/B"), never by
+  name;
   images are validated for type/size before ever reaching the model; API
   keys live only in environment variables and were never committed to the
   repository.
@@ -144,6 +181,11 @@ locked out of all of them. Sanadi AI addresses this directly:
   holographic skeleton synced to live rep tracking, points, levels, and
   achievements — designed to solve the actual clinical problem of poor
   rehab-exercise adherence, not just for visual flair.
+- **Case Insights: the AI learns from the panel's own outcomes.** For any
+  patient, Gemini compares anonymized trajectories of previous cases (who
+  improved, who worsened, and what preceded each) and briefs the provider on
+  what worked, what preceded setbacks, and how to keep *this* patient off
+  the failure path — grounded in the clinic's real data, not generic advice.
 
 ---
 
@@ -196,6 +238,13 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
   (`medications`, `appointments`, `symptoms`, `safety`).
 - **Offline-degrading.** With no `GEMINI_API_KEY`, the DB, routing,
   dashboards, and the safety net all still work.
+- **Role assistants.** Beyond the patient orchestrator, `/chat/assistant`
+  serves a **caregiver companion** (grounded in the linked patient's
+  permission-scoped data, with its own offline emergency net) and a
+  **provider clinical copilot** (grounded in a live panel snapshot:
+  adherence, risk scores + reasons, symptoms, open escalations). Both keep
+  thread context from the last few turns and enforce a role check (403 on
+  mismatch).
 
 ---
 
@@ -265,32 +314,79 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
     keyboard focus (Tab) or hover, and a "Read page" button reads the whole
     page on demand. Works alongside the device's built-in screen reader.
 
-### Caregiver portal
-- Connect to a patient by ID and grant/adjust access scopes.
-- Patient hero card, adherence/missed-dose/appointment stat cards.
+### Caregiver portal — "Family Care Hub"
+- Connect to a patient by ID and grant/adjust access scopes (re-granting
+  updates the existing link, never duplicates it).
+- Patient hero card with a live status pulse, adherence/missed-dose/
+  appointment stat cards.
+- **Live safety alerts** — the portal polls every 20 seconds, so an
+  emergency the patient reports in chat appears while you watch, with a
+  toast for anything new. An urgent-alert banner surfaces the latest event.
+- **🚑 Request urgent review** — one button sends an escalation straight to
+  the top of every provider's queue (reason pre-filled from the alert). When
+  the provider acknowledges or resolves it, the caregiver is notified back —
+  the loop is closed, not fire-and-forget.
+- **🧠 Understand tab** — an AI-written plain-language guide for worried
+  family: which of the patient's current symptoms are *normal* for this
+  stage, three facts about the condition, the red flags that genuinely
+  warrant a call, and how to help today. Cached per patient per day.
+- **💬 AI Assistant** — a care-support companion in the sidebar that answers
+  free-form questions ("Is her pain normal?", "What do her meds do?", "How
+  can I help today?") grounded strictly in the permission scopes granted.
+  Emergency-sounding messages get instant offline call-for-help guidance.
 - A real **appointment mini-calendar** highlighting the patient's actual
   scheduled visit dates.
 - A patient-location placeholder (explicitly not implemented — no fake GPS).
-- Recent symptoms list, a shared daily-routine reminder tracker, and a safety
-  alerts feed (fed by the same Safety-agent emergency notifications).
+- Recent symptoms list and a shared daily-routine reminder tracker (scoped
+  per patient — switching patients never mixes data).
 
-### Provider portal
-- Sortable patient table (click a row for an AI pre-visit summary).
-- Recharts bar chart of adherence-by-patient and a pie chart of population
-  risk distribution.
-- **Appointment queue** — upcoming visits across all patients in the next 14
-  days (dedicated backend endpoint).
-- Private **clinical notes** per patient (persisted in the browser).
-- High-risk patient alert list (adherence < 70%).
+### Provider portal — clinical command center
+- **AI risk triage** — the roster is auto-ranked by a 0–100 risk score
+  computed from real data (low/slipping adherence, rising pain trajectory,
+  high recent pain, open caregiver escalations, rehab drop-off), each row
+  showing its top risk reason with the full explanation on hover. Rule-based
+  and free, so it recomputes on every load.
+- **🚨 Urgent reviews queue** — caregiver escalations pinned in red at the
+  top of the rail with Acknowledge / Mark-reviewed actions (both notify the
+  caregiver back). New escalations arrive live via 20-second polling with a
+  toast. Clicking one jumps to that patient.
+- **List-detail workspace**: click any patient for a five-tab detail pane —
+  - **🧠 AI Summary** — Gemini pre-visit briefing (concerns, treatment,
+    discussion points).
+  - **📈 Trends** — pain-trajectory line chart and taken-vs-missed dose bars
+    for the last 14 days, with screen-reader chart summaries.
+  - **🔍 Case Insights** — the AI compares this patient against anonymized
+    outcome snapshots of the rest of the panel: what worked in similar
+    cases, what preceded setbacks, and three actions to keep this patient
+    off the failure path.
+  - **📝 Clinical Notes** — private per-patient notes with **🎙️ hands-free
+    voice dictation** (Web Speech), persisted in the browser.
+  - **📅 Schedule** — the patient's upcoming visits.
+- **💬 Clinical Copilot** — a panel-wide AI assistant in the sidebar:
+  "Who needs attention first today?", "Summarize Ahmed's trajectory",
+  grounded in live adherence/risk/escalation data.
+- Population view: KPI strip, adherence-by-patient bar chart, population
+  risk pie, high-risk alert list, and a cross-patient **appointment queue**
+  for the next 14 days.
 
 ### Platform-wide
 - **Dark mode / light mode**, persisted, respects OS preference by default.
+- **WCAG accessibility foundation** (audited against a 99-point UX guideline
+  checklist): visible 3px keyboard focus rings on every interactive element,
+  `prefers-reduced-motion` respected app-wide, a skip-to-content link,
+  ≥44px touch targets, theme-aware badge contrast (≥4.5:1 in both modes),
+  and screen-reader summaries on clinical charts.
+- **Professional iconography**: all structural chrome (sidebar nav, brand,
+  topbar controls) uses Lucide vector icons that recolor with the theme;
+  emojis remain only in friendly content, by design.
+- **Redesigned auth pages**: glassmorphism hero with a product vignette and
+  trust stats, icon-adorned inputs, a segmented role picker on sign-up, and
+  **one-click demo login chips** for each role.
 - Collapsible, animated sidebar with a notification badge and profile card.
 - Topbar with cross-page quick-search, real per-role notifications (derived
   from actual backend data — not fabricated counts), a dark-mode toggle, an
-  "Ask AI" shortcut, and language-selector / Google-login / Face-ID UI
-  elements that are **clearly labeled placeholders** (no i18n/OAuth backend
-  exists yet — nothing here fakes functionality).
+  "Ask AI" shortcut (works for every role), and a language-selector that is
+  a **clearly labeled placeholder** (no i18n backend yet).
 - Toast notification system for booking/cancelling/logging actions.
 - Skeleton loading states, a 404 page, and an offline banner
   (`navigator.onLine`).
@@ -307,16 +403,16 @@ backend/
   main.py            FastAPI app + router registration, startup auto-seed
   config.py          Settings (.env) — CORS, SINGLE_CALL_MODE, etc.
   database.py        SQLAlchemy engine/session
-  models.py          Users, meds, appointments, symptoms, rehab sessions, messages, care links
+  models.py          Users, meds, appointments, symptoms, rehab sessions, messages, care links, escalations
   schemas.py         Pydantic request/response models
   ai/
     gemini_client.py   generate / generate_json / analyze_image (multimodal)
     prompts.py         System prompts incl. safety & vision guardrails
     memory.py          Conversation history helpers
   agents/             orchestrator + safety + vision + 6 specialists
-  services/           medication / appointment / patient / notification / rehab logic
+  services/           medication / appointment / patient / notification / rehab / risk-triage / escalation logic
   api/                chat (text + image), patient, caregiver, doctor, appointment, analytics, rehab, care
-  seed.py             Demo patient + caregiver + provider loader
+  seed.py             Demo users + 3 weeks of backdated history (symptoms, doses, rehab)
   data/               sample_patients.json
 
 frontend/
@@ -348,7 +444,9 @@ render.yaml                        Render blueprint (backend deploy)
 - **Motion:** Framer Motion throughout — animated route transitions, card
   hover-lift, animated counters, progress rings, confetti bursts, staggered
   list entrances, the multi-agent status board.
-- **Charts:** Recharts (area, bar, pie) plus a hand-built animated
+- **Icons:** Lucide (vector, stroke-based) for all structural chrome —
+  theme-colorable and consistent cross-platform.
+- **Charts:** Recharts (area, bar, line, pie) plus a hand-built animated
   `ProgressRing` for circular progress.
 
 ---
@@ -392,7 +490,7 @@ Run the backend alongside it.
 |-------|------|--------------|
 | `/login`, `/register` | anyone | Auth |
 | `/` | all | Home — patients see live stats; caregivers/providers redirect to their portal |
-| `/chat` | patient | Multi-agent AI chat — agent status board, markdown, voice, photo upload |
+| `/chat` | all | Role-specific AI: patients get the multi-agent companion (agent board, photo upload); caregivers a care-support assistant; providers a clinical copilot |
 | `/dashboard` | patient | Meds, appointments, symptoms, adherence |
 | `/appointments` | patient | Book / cancel appointments |
 | `/medications` | patient | Add meds, log doses taken/missed |
@@ -438,13 +536,19 @@ curl -s localhost:8000/rehab/patients/1/progress
 | POST | `/patients/symptoms` | Log a symptom |
 | GET  | `/patients/{id}/medications`, POST `/medications`, POST `/medications/log` | List / add / log a dose |
 | GET  | `/patients/{id}/appointments`, POST `/appointments`, DELETE `/appointments/{id}` | List / book / cancel |
-| POST | `/caregivers/link` | Grant a caregiver scoped access |
+| POST | `/chat/assistant` | Role assistants: caregiver companion / provider copilot (role-checked) |
+| POST | `/caregivers/link` | Grant a caregiver scoped access (upserts — one link per pair) |
 | GET  | `/caregivers/{cid}/patients/{pid}/overview` | Permission-gated view |
 | GET  | `/caregivers/{cid}/notifications` | Safety alerts for a caregiver |
-| GET  | `/providers/patients` | All patients (provider view) |
+| POST | `/caregivers/escalations` | Request an urgent provider review (requires care link) |
+| GET  | `/caregivers/{cid}/patients/{pid}/education` | AI "what's normal + red flags" guide for family |
+| GET  | `/providers/patients` | All patients, risk-scored + ranked with reasons |
 | GET  | `/providers/patients/{id}/summary` | AI pre-visit summary |
+| GET  | `/providers/patients/{id}/case-insights` | AI outcome comparison vs anonymized panel cases |
+| GET  | `/providers/escalations` | Open/acknowledged urgent review requests |
+| POST | `/providers/escalations/{id}/status` | Acknowledge/resolve (notifies the caregiver back) |
 | GET  | `/providers/appointments/queue` | Upcoming appointments across all patients |
-| GET  | `/analytics/patients/{id}`, `/analytics/population` | Patient / population insights |
+| GET  | `/analytics/patients/{id}`, `/analytics/population` | Patient insights (incl. dated pain + dose series for trend charts) / population |
 | GET  | `/rehab/exercises`, POST `/rehab/sessions`, GET `/rehab/patients/{id}/progress` | VR exercise catalog / log a session / points & level |
 | GET  | `/care/modules` | Specialized care module metadata |
 | GET  | `/health` | Liveness + whether Gemini is online |
@@ -499,9 +603,9 @@ the repo, update `base` in `frontend/vite.config.js` to match.
 - The DB is SQLite and **ephemeral on Render** — it resets and re-seeds on
   every redeploy. Swap in Postgres for persistence.
 - Several dashboard tiles are intentionally clearly-labeled placeholders or
-  demo data, not fake functionality: the weather widget, Google login, Face
-  ID, the language selector, and heart-rate/sleep/steps/water/calories
-  (deterministic per-day values — there's no wearable/device integration).
+  demo data, not fake functionality: the weather widget, the language
+  selector, and heart-rate/sleep/steps/water/calories (deterministic per-day
+  values — there's no wearable/device integration).
 - The `vr/` Unity module from the original concept doc is a possible future
   native companion to the in-browser VR rehab experience, which today is a
   fully interactive (non-Unity) web simulation with an animated SVG skeleton,
