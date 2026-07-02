@@ -18,7 +18,8 @@
 
 .pw-field { position: relative; }
 .pw-field input { padding-right: 44px; }
-.pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: transparent; font-size: 1.05rem; padding: 6px; }
+.pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: transparent; padding: 8px; color: var(--muted); display: inline-flex; border-radius: 8px; }
+.pw-toggle:hover { color: var(--primary); background: var(--surface-2); }
 .auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0 14px; color: var(--muted); font-size: .78rem; }
 .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
@@ -270,3 +271,68 @@
 .queue-row:last-child { border-bottom: none; }
 
 .clinical-detail { min-width: 0; }
+
+/* ---------- Auth v2: prettier login/register ---------- */
+.auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.auth-brand .logo-box {
+  width: 52px; height: 52px; border-radius: 16px; background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.3); backdrop-filter: blur(8px);
+  display: grid; place-items: center; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+.auth-brand .name { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; letter-spacing: -.02em; }
+.auth-brand .tag { font-size: .78rem; opacity: .85; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+.hero-glass-card {
+  margin-top: 30px; max-width: 430px; border-radius: var(--radius-lg);
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+  backdrop-filter: blur(14px); padding: 18px 20px; box-shadow: 0 20px 50px rgba(0,0,0,.22);
+}
+.hero-glass-card .bubble {
+  background: rgba(255,255,255,.92); color: #0f172a; border-radius: 14px 14px 14px 4px;
+  padding: 10px 14px; font-size: .88rem; line-height: 1.5; box-shadow: var(--shadow-sm);
+}
+.hero-glass-card .bubble.user {
+  background: rgba(13, 34, 66, .55); color: #fff; border-radius: 14px 14px 4px 14px;
+  margin: 10px 0 10px auto; max-width: 85%;
+}
+.hero-glass-card .bubble .who { font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .65; display: block; margin-bottom: 3px; }
+
+.auth-trust { display: flex; gap: 18px; margin-top: 26px; flex-wrap: wrap; }
+.auth-trust div { display: flex; flex-direction: column; }
+.auth-trust strong { font-size: 1.25rem; font-family: var(--font-display); }
+.auth-trust span { font-size: .75rem; opacity: .8; }
+
+.input-icon-field { position: relative; }
+.input-icon-field > .lead-ico {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); display: inline-flex; pointer-events: none;
+}
+.input-icon-field input, .input-icon-field select { padding-left: 40px; }
+
+.role-segments { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.role-segment {
+  border: 1.5px solid var(--border); border-radius: 14px; background: var(--surface);
+  padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--muted); font-weight: 700; font-size: .78rem; transition: all .15s ease; min-height: 64px;
+}
+.role-segment:hover { border-color: var(--primary); color: var(--primary); }
+.role-segment.active {
+  border-color: var(--primary); background: var(--primary-100); color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.demo-chips { display: grid; gap: 8px; margin-top: 10px; }
+.demo-chip {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  border: 1.5px solid var(--border); background: var(--surface); border-radius: 14px;
+  padding: 9px 12px; transition: all .15s ease; min-height: 54px;
+}
+.demo-chip:hover { border-color: var(--primary); background: var(--primary-100); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.demo-chip .avatar-sm {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+  color: #fff; flex-shrink: 0;
+}
+.demo-chip .role-name { font-weight: 800; font-size: .86rem; color: var(--text); }
+.demo-chip .role-mail { font-size: .74rem; color: var(--muted); }
+.demo-chip .go { margin-left: auto; color: var(--muted); display: inline-flex; }
+.demo-chip:hover .go { color: var(--primary); }

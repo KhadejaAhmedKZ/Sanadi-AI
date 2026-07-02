@@ -1,8 +1,18 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  HeartPulse, Mail, Lock, Eye, EyeOff, UserRound,
+  User, Users, Stethoscope,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorNote } from "../components/ui.jsx";
+
+const ROLES = [
+  { id: "patient", label: "Patient", icon: User },
+  { id: "caregiver", label: "Caregiver", icon: Users },
+  { id: "provider", label: "Provider", icon: Stethoscope },
+];
 
 export default function Register() {
   const { register } = useAuth();
@@ -54,11 +64,24 @@ export default function Register() {
           transition={{ duration: 0.6 }}
           style={{ position: "relative", zIndex: 1 }}
         >
-          <h1>🏥 Join Sanadi AI</h1>
+          <div className="auth-brand">
+            <div className="logo-box"><HeartPulse size={28} strokeWidth={2.3} aria-hidden="true" /></div>
+            <div>
+              <div className="name">Sanadi AI</div>
+              <div className="tag">سندي — your support</div>
+            </div>
+          </div>
+          <h1>Join the care circle</h1>
           <p>
-            Create your account to access a connected healthcare ecosystem for patients,
-            caregivers and providers — with AI support at every step.
+            One account connects you to an AI care team built for your role — a health
+            companion for patients, a support guide for families, and a clinical copilot
+            for providers.
           </p>
+          <div className="auth-trust">
+            <div><strong>1 min</strong><span>to get started</span></div>
+            <div><strong>Free</strong><span>demo access</span></div>
+            <div><strong>Private</strong><span>you control sharing</span></div>
+          </div>
         </motion.div>
       </div>
       <div className="auth-card">
@@ -66,31 +89,58 @@ export default function Register() {
           <h2>Create account</h2>
           <p className="muted mb">It only takes a minute.</p>
           <form onSubmit={submit}>
+            <label className="field" style={{ marginBottom: 14 }}>
+              <span>I am a…</span>
+            </label>
+            <div className="role-segments" style={{ marginTop: -8, marginBottom: 16 }} role="radiogroup" aria-label="Account type">
+              {ROLES.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={form.role === r.id}
+                  className={"role-segment" + (form.role === r.id ? " active" : "")}
+                  onClick={() => setForm({ ...form, role: r.id })}
+                >
+                  <r.icon size={19} aria-hidden="true" />
+                  {r.label}
+                </button>
+              ))}
+            </div>
+
             <label className="field">
               <span>Full name</span>
-              <input value={form.name} onChange={set("name")} required />
-            </label>
-            <label className="field">
-              <span>Email</span>
-              <input type="email" value={form.email} onChange={set("email")} required />
-            </label>
-            <label className="field">
-              <span>Password</span>
-              <div className="pw-field">
-                <input type={showPw ? "text" : "password"} value={form.password} onChange={set("password")} required minLength={6} />
-                <button type="button" className="pw-toggle" onClick={() => setShowPw((s) => !s)} aria-label="Toggle password visibility">
-                  {showPw ? "🙈" : "👁️"}
-                </button>
+              <div className="input-icon-field">
+                <span className="lead-ico"><UserRound size={16} aria-hidden="true" /></span>
+                <input value={form.name} onChange={set("name")} placeholder="Your name" autoComplete="name" required />
               </div>
             </label>
             <label className="field">
-              <span>I am a…</span>
-              <select value={form.role} onChange={set("role")}>
-                <option value="patient">Patient</option>
-                <option value="caregiver">Caregiver</option>
-                <option value="provider">Healthcare Provider</option>
-              </select>
+              <span>Email</span>
+              <div className="input-icon-field">
+                <span className="lead-ico"><Mail size={16} aria-hidden="true" /></span>
+                <input type="email" value={form.email} onChange={set("email")} placeholder="you@example.com" autoComplete="email" required />
+              </div>
             </label>
+            <label className="field">
+              <span>Password</span>
+              <div className="pw-field input-icon-field">
+                <span className="lead-ico"><Lock size={16} aria-hidden="true" /></span>
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={form.password}
+                  onChange={set("password")}
+                  placeholder="At least 6 characters"
+                  autoComplete="new-password"
+                  required
+                  minLength={6}
+                />
+                <button type="button" className="pw-toggle" onClick={() => setShowPw((s) => !s)} aria-label={showPw ? "Hide password" : "Show password"}>
+                  {showPw ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                </button>
+              </div>
+            </label>
+
             <AnimatePresence>
               {form.role === "patient" && (
                 <motion.div
