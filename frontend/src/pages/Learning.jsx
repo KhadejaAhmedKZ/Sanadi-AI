@@ -173,7 +173,7 @@ export default function Learning() {
       <div className="page-head">
         <h1>🎓 Learning Hub</h1>
         <p>
-          Short courses with certificates — training for clinicians and caregivers,
+          Short courses with certificates — training for clinicians and Primary Carers,
           plain-language health education for patients.{" "}
           <span className="badge gray">demo content — not accredited</span>
         </p>

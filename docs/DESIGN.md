@@ -8,14 +8,14 @@ renders them natively in this file.
 
 ## 1. Use case diagram
 
-Three primary actors (Patient, Caregiver, Provider), one secondary actor
+Three primary actors (Patient, Primary Carer, Provider), one secondary actor
 (Google Gemini). The Safety Screen is `«include»`-ed into every patient chat;
 photo analysis `«extend»`s the chat.
 
 ```mermaid
 flowchart LR
     P(["🧑 Patient"])
-    C(["👨‍👩‍👧 Caregiver"])
+    C(["👨‍👩‍👧 Primary Carer"])
     D(["👨‍⚕️ Provider"])
     G(["🤖 Gemini AI<br/>(secondary actor)"])
 
@@ -36,7 +36,7 @@ flowchart LR
             UC6([Use care-module tools])
             UC7([Enable accessibility modes:<br/>face control, screen reader, TTS])
         end
-        subgraph CG["Family caregiving"]
+        subgraph CG["Primary care support"]
             UC8([Link to patient with<br/>permission scopes])
             UC9([View scoped patient overview])
             UC10([Receive live safety alerts])
@@ -104,10 +104,10 @@ sequenceDiagram
 
 ---
 
-## 3. Sequence diagram — emergency safety net → live caregiver alert
+## 3. Sequence diagram — emergency safety net → live Primary Carer alert
 
 Zero AI calls on the critical path: the keyword net works even if Gemini is
-down or rate-limited. The caregiver portal polls every 20 s.
+down or rate-limited. The Primary Carer portal polls every 20 s.
 
 ```mermaid
 sequenceDiagram
@@ -117,14 +117,14 @@ sequenceDiagram
     participant API as FastAPI /chat
     participant SN as Safety Net
     participant DB as SQLite
-    participant CFE as Caregiver Portal
-    actor Cg as Caregiver
+    participant CFE as Primary Carer Portal
+    actor Cg as Primary Carer
 
     Pt->>FE: "I have severe chest pain"
     FE->>API: POST /chat
     API->>SN: screen(message)
     SN-->>API: 🚨 EMERGENCY (no AI call)
-    API->>DB: notify each linked caregiver (safety scope)
+    API->>DB: notify each linked Primary Carer (safety scope)
     API-->>FE: emergency guidance (call local emergency number)
     FE-->>Pt: 🚨 emergency reply bubble
 
@@ -144,8 +144,8 @@ One event travels through all three roles and closes the loop.
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Cg as Caregiver
-    participant CFE as Caregiver Portal
+    actor Cg as Primary Carer
+    participant CFE as Primary Carer Portal
     participant API as FastAPI
     participant DB as SQLite
     participant RS as Risk Service
@@ -162,13 +162,13 @@ sequenceDiagram
         PFE->>API: GET /providers/escalations + /providers/patients
     end
     API->>RS: compute_risk(patient) — open escalation ⇒ +30
-    RS-->>API: risk ↑ ("Caregiver requested urgent review")
+    RS-->>API: risk ↑ ("Primary Carer requested urgent review")
     API-->>PFE: escalation + re-ranked patient list
     PFE-->>Dr: 🚨 red priority card + toast
 
     Dr->>PFE: Acknowledge → Mark reviewed
     PFE->>API: POST /providers/escalations/{id}/status
-    API->>DB: status=resolved + notify caregiver
+    API->>DB: status=resolved + notify Primary Carer
     API-->>PFE: 200
 
     CFE->>API: poll notifications
@@ -230,7 +230,7 @@ leave the browser.
 ```mermaid
 flowchart LR
     P(["🧑 Patient"])
-    C(["👨‍👩‍👧 Caregiver"])
+    C(["👨‍👩‍👧 Primary Carer"])
     D(["👨‍⚕️ Provider"])
     G[["🤖 Google Gemini API"]]
     U[["🇦🇪 UAE PASS<br/>(simulated)"]]
@@ -258,7 +258,7 @@ flowchart LR
 
 The core of the connected-care loop — mirrors the `EscalationStatus` enum.
 An open escalation adds **+30** to the patient's risk score; every transition
-notifies the caregiver back.
+notifies the Primary Carer back.
 
 ```mermaid
 stateDiagram-v2

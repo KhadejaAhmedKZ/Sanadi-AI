@@ -25,7 +25,7 @@ const ROLE_CHAT = {
   },
   caregiver: {
     welcome: (name) =>
-      `Hi ${name}! I'm your caregiving companion. I know the care plan of the patient you're linked to (only what they've permitted), so ask me anything — what's normal, how to help day-to-day, what their medications do, or what to watch for.`,
+      `Hi ${name}! I'm your Primary Carer companion. I know the care plan of the patient you're linked to (only what they've permitted), so ask me anything — what's normal, how to help day-to-day, what their medications do, or what to watch for.`,
     agents: [],
     suggestions: [
       "How is my patient doing overall?",

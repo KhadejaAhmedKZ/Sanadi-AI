@@ -61,7 +61,7 @@ def compute_risk(db: Session, patient_id: int) -> dict:
     )
     if open_esc:
         score += 30
-        reasons.append("Caregiver requested urgent review")
+        reasons.append("Primary Carer requested urgent review")
 
     # Rehab drop-off: had sessions before, but nothing in the last 7 days.
     last_session = db.scalar(

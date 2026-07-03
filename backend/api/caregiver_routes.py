@@ -102,7 +102,7 @@ async def education(caregiver_id: int, patient_id: int, db: Session = Depends(ge
         or "none recorded recently"
     )
     prompt = (
-        "You are writing for a worried FAMILY CAREGIVER (not a clinician). "
+        "You are writing for a worried PRIMARY CARER — a trusted family member or support person (not a clinician). "
         f"They care for a patient with: {patient.conditions or 'no recorded conditions'}. "
         f"Recent symptoms: {symptom_text}.\n\n"
         "Write a short, warm, plain-language guide in markdown with exactly these sections:\n"

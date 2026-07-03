@@ -50,7 +50,7 @@ _EMERGENCY_TEXT = (
     "🚨 This sounds like it could be urgent.\n\n"
     "If you may be in danger, please contact your local emergency number or go "
     "to the nearest emergency department right now. I've flagged this and, if "
-    "permitted, notified your caregiver."
+    "permitted, notified your Primary Carer."
 )
 
 
@@ -248,7 +248,7 @@ class Orchestrator:
             "🚨 This sounds like it could be urgent.\n\n"
             f"{guidance}\n\n"
             "If you are in immediate danger, contact your local emergency number now. "
-            "I've flagged this and, if permitted, notified your caregiver."
+            "I've flagged this and, if permitted, notified your Primary Carer."
         )
 
 

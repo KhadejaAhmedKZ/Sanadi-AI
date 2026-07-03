@@ -5,14 +5,24 @@ import {
   HeartPulse, Mail, Lock, Eye, EyeOff, UserRound, Loader2,
   User, Users, Stethoscope,
 } from "lucide-react";
+import UAEPassLogo from "../components/UAEPassLogo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorNote } from "../components/ui.jsx";
 
 const ROLES = [
   { id: "patient", label: "Patient", icon: User },
-  { id: "caregiver", label: "Caregiver", icon: Users },
+  { id: "caregiver", label: "Primary Carer", icon: Users },
   { id: "provider", label: "Provider", icon: Stethoscope },
 ];
+
+const ROLE_INFO = {
+  patient: "Manage your own health: AI companion, body map, appointments, medications, labs, and VR rehab.",
+  caregiver:
+    "A trusted family member, guardian, or designated support person who assists the patient with daily " +
+    "healthcare activities. With the patient's permission, the Primary Carer can monitor health progress, " +
+    "receive medication reminders, document observations, add notes, manage appointments, and receive safety alerts.",
+  provider: "A licensed clinician: risk-ranked panel, AI briefings, labs, video visits, and escalation triage.",
+};
 
 export default function Register() {
   const { register } = useAuth();
@@ -99,7 +109,7 @@ export default function Register() {
           <button type="button" className="btn-uaepass" onClick={uaePass} disabled={uaeState === "connecting"} style={{ marginBottom: 6 }}>
             {uaeState === "connecting"
               ? <Loader2 size={17} className="spin" aria-hidden="true" />
-              : <span style={{ fontSize: "1.25rem", lineHeight: 1 }} aria-hidden="true">🇦🇪</span>}
+              : <UAEPassLogo size={24} />}
             {uaeState === "connecting" ? "Connecting to UAE PASS…" : "Continue with UAE PASS"}
           </button>
           <AnimatePresence>
@@ -110,7 +120,7 @@ export default function Register() {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                🇦🇪 <strong>UAE PASS is simulated in this demo</strong> — in production
+                <strong>UAE PASS is simulated in this demo</strong> — in production
                 your profile would come from your national digital identity. For now,
                 register below.
               </motion.div>
@@ -138,6 +148,9 @@ export default function Register() {
                 </button>
               ))}
             </div>
+            <p className="muted" style={{ fontSize: ".8rem", lineHeight: 1.55, margin: "0 0 14px" }}>
+              {ROLE_INFO[form.role]}
+            </p>
 
             <label className="field">
               <span>Full name</span>

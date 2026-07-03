@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { HeartPulse, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import UAEPassLogo from "../components/UAEPassLogo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorNote } from "../components/ui.jsx";
 
@@ -163,7 +164,7 @@ export default function Login() {
             >
               {uaeState === "connecting"
                 ? <Loader2 size={17} className="spin" aria-hidden="true" />
-                : <span style={{ fontSize: "1.25rem", lineHeight: 1 }} aria-hidden="true">🇦🇪</span>}
+                : <UAEPassLogo size={24} />}
               {uaeState === "connecting" ? "Connecting…" : "UAE PASS"}
             </button>
             <button type="button" className="btn secondary block" style={{ flex: 1 }} disabled title="Face ID — coming soon">
@@ -178,7 +179,7 @@ export default function Login() {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                🇦🇪 <strong>UAE PASS is simulated in this demo</strong> — the production
+                <strong>UAE PASS is simulated in this demo</strong> — the production
                 app would authenticate with your national digital identity here. Use a
                 demo account below for now.
               </motion.div>
@@ -191,7 +192,7 @@ export default function Login() {
           <div className="muted" style={{ fontSize: ".8rem", marginTop: 20, lineHeight: 1.7 }}>
             <strong>Demo accounts</strong> (password: demo1234)
             <div>👤 Patient — sara@example.com</div>
-            <div>👨‍👩‍👧 Caregiver — care@example.com</div>
+            <div>👨‍👩‍👧 Primary Carer — care@example.com</div>
             <div>👨‍⚕️ Provider — doctor@example.com</div>
           </div>
         </motion.div>

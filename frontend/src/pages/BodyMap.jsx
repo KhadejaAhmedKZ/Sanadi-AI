@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useLocalStorage } from "../hooks/useLocalStorage.js";
 import { useToast } from "../context/ToastContext.jsx";
 import { api } from "../api/client.js";
 import BodyFigure, { intensityColor } from "../components/BodyFigure.jsx";
@@ -14,7 +15,7 @@ const LEGEND = [
   { label: "Mild (1–3)", color: "#eab308" },
   { label: "Moderate (4–6)", color: "#f97316" },
   { label: "Severe (7–8)", color: "#ef4444" },
-  { label: "Very severe (9–10)", color: "#881337" },
+  { label: "Very severe / chronic (9–10)", color: "#7c3aed" },
 ];
 
 const EMPTY_FORM = {
@@ -28,6 +29,7 @@ export default function BodyMap() {
   const navigate = useNavigate();
 
   const [side, setSide] = useState("front");
+  const [sex, setSex] = useLocalStorage(`sanadi_bodysex_${user?.id ?? "anon"}`, "female");
   const [latest, setLatest] = useState({});
   const [history, setHistory] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -136,11 +138,17 @@ export default function BodyMap() {
 
         {/* CENTER: the figure */}
         <div className="card center" style={{ padding: 18 }}>
-          <div className="tabs" style={{ justifyContent: "center", marginBottom: 10 }}>
-            <button className={"tab" + (side === "front" ? " active" : "")} onClick={() => setSide("front")}>Front</button>
-            <button className={"tab" + (side === "back" ? " active" : "")} onClick={() => setSide("back")}>Back</button>
+          <div className="row between" style={{ flexWrap: "wrap", gap: 8 }}>
+            <div className="tabs" style={{ marginBottom: 0, borderBottom: "none" }}>
+              <button className={"tab" + (side === "front" ? " active" : "")} onClick={() => setSide("front")}>Front</button>
+              <button className={"tab" + (side === "back" ? " active" : "")} onClick={() => setSide("back")}>Back</button>
+            </div>
+            <div className="tabs" style={{ marginBottom: 0, borderBottom: "none" }}>
+              <button className={"tab" + (sex === "female" ? " active" : "")} onClick={() => setSex("female")}>♀ Female</button>
+              <button className={"tab" + (sex === "male" ? " active" : "")} onClick={() => setSex("male")}>♂ Male</button>
+            </div>
           </div>
-          <BodyFigure side={side} latest={latest} selected={selected} onSelect={selectRegion} />
+          <BodyFigure side={side} sex={sex} latest={latest} selected={selected} onSelect={selectRegion} />
           <p className="muted" style={{ fontSize: ".78rem", marginTop: 8 }}>
             Tap any dot to assess that area · colored dots show your latest reports
           </p>

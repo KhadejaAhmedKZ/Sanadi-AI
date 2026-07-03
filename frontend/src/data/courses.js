@@ -61,7 +61,7 @@ export const COURSES = [
       { title: "Preventing falls at home", body: "Most home injuries during recovery are falls: clear walking paths, night lights, non-slip mats, and keeping essentials within reach do more than constant supervision." },
       { title: "Recognizing genuine warning signs", body: "Learn the difference between expected discomfort and red flags: new confusion, chest pain, one-sided weakness, or breathing difficulty always mean call for help now." },
       { title: "Helping without taking over", body: "Recovery needs practice. Do things WITH the patient, not FOR them — independence is a clinical outcome, not just a preference." },
-      { title: "Caring for the caregiver", body: "Burnout degrades care. Schedule real breaks, accept help, and treat your own sleep and health as part of the care plan." },
+      { title: "Caring for the carer", body: "Burnout degrades care. Schedule real breaks, accept help, and treat your own sleep and health as part of the care plan." },
     ],
   },
   {
@@ -143,6 +143,6 @@ export const COURSES = [
 
 export const AUDIENCE_LABEL = {
   provider: { label: "For clinicians", color: "var(--gradient-warm)" },
-  caregiver: { label: "For caregivers", color: "var(--gradient-secondary)" },
+  caregiver: { label: "For Primary Carers", color: "var(--gradient-secondary)" },
   patient: { label: "For patients", color: "var(--gradient-primary)" },
 };

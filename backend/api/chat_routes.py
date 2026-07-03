@@ -30,7 +30,7 @@ _EMERGENCY_TEXT = (
     "🚨 This sounds like it could be urgent.\n\n"
     "If you may be in danger, please contact your local emergency number or go "
     "to the nearest emergency department right now. I've flagged this and, if "
-    "permitted, notified your caregiver."
+    "permitted, notified your Primary Carer."
 )
 
 
@@ -120,7 +120,7 @@ def _caregiver_context(db: Session, caregiver_id: int, patient_id: int | None) -
     parts = [
         f"Patient: {patient.name}",
         f"Conditions: {patient.conditions or 'none recorded'}",
-        f"Caregiver's permitted scopes: {', '.join(sorted(scopes)) or 'none'}",
+        f"Primary Carer's permitted scopes: {', '.join(sorted(scopes)) or 'none'}",
     ]
     if "medications" in scopes:
         meds = medication_service.list_medications(db, patient.id)

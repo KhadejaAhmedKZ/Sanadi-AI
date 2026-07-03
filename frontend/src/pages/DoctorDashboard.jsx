@@ -50,6 +50,7 @@ export default function DoctorDashboard() {
   const [activeVisit, setActiveVisit] = useState(null);
   const [bodyMap, setBodyMap] = useState({ latest: {}, history: [] });
   const [bodySide, setBodySide] = useState("front");
+  const [bodySex, setBodySex] = useState("female");
   const [bodyRegion, setBodyRegion] = useState(null);
 
   // Voice dictation for clinical notes (appends each finished phrase).
@@ -143,7 +144,7 @@ export default function DoctorDashboard() {
       await api.setEscalationStatus(id, status, user.id);
       setEscalations(await api.providerEscalations());
       setPatients(await api.allPatients());
-      toast.success(status === "resolved" ? "Resolved — the caregiver has been notified" : "Acknowledged — caregiver notified you're on it");
+      toast.success(status === "resolved" ? "Resolved — the Primary Carer has been notified" : "Acknowledged — Primary Carer notified you're on it");
     } catch (e) {
       toast.error(e.message);
     }
@@ -499,12 +500,19 @@ export default function DoctorDashboard() {
               {detailTab === "body" && (
                 <div className="grid cols-2" style={{ alignItems: "start" }}>
                   <div className="card center" style={{ padding: 16 }}>
-                    <div className="tabs" style={{ justifyContent: "center", marginBottom: 8 }}>
-                      <button className={"tab" + (bodySide === "front" ? " active" : "")} onClick={() => setBodySide("front")}>Front</button>
-                      <button className={"tab" + (bodySide === "back" ? " active" : "")} onClick={() => setBodySide("back")}>Back</button>
+                    <div className="row" style={{ justifyContent: "center", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                      <div className="tabs" style={{ marginBottom: 0, borderBottom: "none" }}>
+                        <button className={"tab" + (bodySide === "front" ? " active" : "")} onClick={() => setBodySide("front")}>Front</button>
+                        <button className={"tab" + (bodySide === "back" ? " active" : "")} onClick={() => setBodySide("back")}>Back</button>
+                      </div>
+                      <div className="tabs" style={{ marginBottom: 0, borderBottom: "none" }}>
+                        <button className={"tab" + (bodySex === "female" ? " active" : "")} onClick={() => setBodySex("female")}>♀</button>
+                        <button className={"tab" + (bodySex === "male" ? " active" : "")} onClick={() => setBodySex("male")}>♂</button>
+                      </div>
                     </div>
                     <BodyFigure
                       side={bodySide}
+                      sex={bodySex}
                       latest={bodyMap.latest}
                       selected={bodyRegion}
                       onSelect={setBodyRegion}

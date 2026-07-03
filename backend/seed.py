@@ -242,7 +242,7 @@ def seed() -> None:
     print(
         "\nDone. Demo logins (password demo1234):\n"
         "  Patient:   sara@example.com\n"
-        "  Caregiver: care@example.com\n"
+        "  Primary Carer: care@example.com\n"
         "  Provider:  doctor@example.com"
     )
 

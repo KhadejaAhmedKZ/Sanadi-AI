@@ -52,7 +52,7 @@ export const NAV = {
       label: "Main",
       items: [
         { to: "/", icon: Home, label: "Home", end: true },
-        { to: "/caregiver", icon: Users, label: "Caregiver Portal" },
+        { to: "/caregiver", icon: Users, label: "Primary Carer Portal" },
         { to: "/chat", icon: MessageCircleMore, label: "AI Assistant" },
         { to: "/learn", icon: GraduationCap, label: "Learning Hub" },
       ],

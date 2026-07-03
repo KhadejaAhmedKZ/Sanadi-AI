@@ -21,7 +21,7 @@ const TITLES = {
   "/analytics": "Analytics",
   "/care": "Specialized Care",
   "/care/rehabilitation": "VR Rehabilitation",
-  "/caregiver": "Caregiver Portal",
+  "/caregiver": "Primary Carer Portal",
   "/provider": "Provider Portal",
   "/accessibility": "Accessibility",
 };

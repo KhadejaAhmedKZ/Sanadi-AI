@@ -403,7 +403,12 @@
 .bodymap-shell { display: grid; grid-template-columns: 220px minmax(280px, 1fr) 340px; gap: 18px; align-items: start; }
 @media (max-width: 1080px) { .bodymap-shell { grid-template-columns: 1fr; } }
 .body-figure { width: 100%; max-width: 300px; height: auto; }
-.bm-body { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+:root { --bm-skin-hi: #f3e0d0; --bm-skin-lo: #e2bfa4; }
+[data-theme="dark"] { --bm-skin-hi: #8a6f5c; --bm-skin-lo: #6b5445; }
+.bm-body path:first-child { stroke: color-mix(in srgb, var(--bm-skin-lo) 60%, #7a5c48); stroke-width: 1.2; }
+.bm-contour path { stroke: color-mix(in srgb, var(--bm-skin-lo) 55%, #6d4f3b); stroke-width: 1; fill: none; opacity: .45; }
+.bm-face circle { fill: color-mix(in srgb, var(--bm-skin-lo) 35%, #4a3426); }
+.bm-face path { stroke: color-mix(in srgb, var(--bm-skin-lo) 35%, #4a3426); stroke-width: 1.1; }
 .bm-spine { stroke: var(--border); stroke-width: 2.5; stroke-dasharray: 3 5; stroke-linecap: round; }
 .bm-hotspot { cursor: pointer; }
 .bm-hotspot:hover circle:last-child { opacity: 1; stroke: var(--accent); stroke-width: 2; }

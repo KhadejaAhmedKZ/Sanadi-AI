@@ -4,11 +4,11 @@
 
 Sanadi AI is a full-stack, **deployed** healthcare platform: a FastAPI + Gemini
 multi-agent backend, and a premium, animated React frontend with role-based
-portals for patients, caregivers, and providers. **Every role gets its own
+portals for patients, Primary Carers, and providers. **Every role gets its own
 AI** — a multi-agent companion for patients (with photo analysis), a
-care-support assistant for family caregivers, and a clinical copilot for
+care-support assistant for family Primary Carers, and a clinical copilot for
 providers — plus a live **connected-care escalation loop** (patient emergency
-→ caregiver alert → provider triage → caregiver notified back), AI risk
+→ Primary Carer alert → provider triage → Primary Carer notified back), AI risk
 triage, outcome-based case insights, an interactive VR rehabilitation module,
 six specialized care modules, a full hands-free/screen-reader accessibility
 suite, dark mode, and live charts.
@@ -27,11 +27,11 @@ Demo accounts (password `demo1234` for all):
 | 👤 Patient | `sara@example.com` | Recovering well — improving pain trend, high adherence |
 | 👤 Patient | `ahmed@example.com` | The **high-risk demo**: rising pain, 43% adherence, flagged by triage |
 | 👤 Patient | `fatima@example.com` | Fully recovered — the success case the AI learns from |
-| 👨‍👩‍👧 Caregiver | `care@example.com` | Pre-linked to Sara with all permission scopes |
+| 👨‍👩‍👧 Primary Carer | `care@example.com` | Pre-linked to Sara with all permission scopes |
 | 👨‍⚕️ Provider | `doctor@example.com` | Sees the whole panel, risk-ranked |
 
 The login page also has **one-click demo chips** — tap "Continue as
-Patient/Caregiver/Provider" and you're in, no typing. Every patient ships
+Patient/Primary Carer/Provider" and you're in, no typing. Every patient ships
 with **three weeks of seeded history** (symptoms, dose logs, rehab sessions)
 so trends, risk scores, and case insights show real trajectories out of the
 box.
@@ -52,7 +52,7 @@ sixth dimension.*
 
 ### Rules compliance & disclosure
 
-- **Data & privacy — no real patient data, ever.** Every patient, caregiver,
+- **Data & privacy — no real patient data, ever.** Every patient, Primary Carer,
   provider, symptom, dose log, lab result, appointment, hospital, doctor
   profile, and course in this app is **synthetic**, authored for this
   prototype (`backend/seed.py`, `backend/data/`, `frontend/src/data/`). The
@@ -80,7 +80,7 @@ sixth dimension.*
 ### Problem Fit — 20%
 
 Healthcare today is fragmented across separate tools for medical questions,
-appointments, medication tracking, rehabilitation, and caregiver coordination
+appointments, medication tracking, rehabilitation, and Primary Carer coordination
 — and patients with mobility, vision, or cognitive limitations are often
 locked out of all of them. Sanadi AI addresses this directly:
 
@@ -96,16 +96,16 @@ locked out of all of them. Sanadi AI addresses this directly:
   users, and gamified VR physiotherapy for rehab adherence — accessibility
   was a first-class design requirement, not an afterthought.
 - **Serves the whole care circle.** Distinct, permission-scoped portals for
-  patients, caregivers, and providers reflect how care actually happens —
-  caregivers only see what a patient explicitly grants, and providers get
+  patients, Primary Carers, and providers reflect how care actually happens —
+  Primary Carers only see what a patient explicitly grants, and providers get
   AI-generated pre-visit summaries that save real clinical time.
 - **A closed escalation loop, not three silos.** A worrying event travels
-  through every role: the patient's message triggers a caregiver safety
-  alert (live, within ~20s), the caregiver requests an urgent review with one
+  through every role: the patient's message triggers a Primary Carer safety
+  alert (live, within ~20s), the Primary Carer requests an urgent review with one
   button, it lands flagged at the top of the provider's queue and bumps the
-  patient's risk score, and resolving it notifies the caregiver back.
+  patient's risk score, and resolving it notifies the Primary Carer back.
 - **An AI for every seat at the table.** Patients get the multi-agent
-  companion; caregivers get a support assistant that knows (only) their
+  companion; Primary Carers get a support assistant that knows (only) their
   permitted patient data and answers "is this normal?"; providers get a
   clinical copilot over the live panel that answers "who needs attention
   first?".
@@ -148,7 +148,7 @@ locked out of all of them. Sanadi AI addresses this directly:
 - A complete design system (light **and** dark mode, a defined color/type
   scale, Framer Motion micro-interactions) built for a clinical audience —
   calm, high-contrast-friendly, no visual noise.
-- **Role-aware UI**: a patient, caregiver, and provider each see a
+- **Role-aware UI**: a patient, Primary Carer, and provider each see a
   navigation and dashboard built for their job, not a generic app shell with
   everything visible to everyone.
 - **Interactive, not static, care modules** — a real memory-matching game,
@@ -171,14 +171,14 @@ locked out of all of them. Sanadi AI addresses this directly:
   offline keyword net catches emergency phrases (chest pain, severe bleeding,
   suicidal ideation, and more) with **zero API calls**, so a Gemini outage or
   rate limit never leaves a real emergency unhandled — and it automatically
-  notifies the patient's linked caregiver.
+  notifies the patient's linked Primary Carer.
 - **The vision agent is explicitly constrained**: it describes what it sees,
   never issues a definitive diagnosis, flags anything that looks like it
   needs urgent care, and always closes with a reminder to see a professional
   — enforced in the system prompt, not left to chance.
-- **Privacy by design**: caregivers only ever see the data scopes a patient
+- **Privacy by design**: Primary Carers only ever see the data scopes a patient
   explicitly grants (`medications`, `appointments`, `symptoms`, `safety`) —
-  and the caregiver's AI assistant is grounded in exactly that same scoped
+  and the Primary Carer's AI assistant is grounded in exactly that same scoped
   context, so the AI cannot leak what the portal wouldn't show. Case
   insights compare patients as anonymized snapshots ("Case A/B"), never by
   name;
@@ -248,7 +248,7 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 - **Safety-first.** Every message is screened before anything else. A keyword
   fail-safe (chest pain, severe bleeding, suicidal ideation, etc.) catches
   critical phrases with **zero API calls**, even if Gemini is offline, and
-  notifies the patient's caregiver.
+  notifies the patient's Primary Carer.
 - **Single-call orchestration.** The free Gemini tier allows only 5
   requests/minute. By default (`SINGLE_CALL_MODE=true`), one Gemini call does
   safety + agent routing + the reply + structured actions (booking an
@@ -262,14 +262,14 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
   under strict guardrails: no definitive diagnosis, flags likely emergencies,
   always recommends in-person evaluation. File-type/size validated both
   client- and server-side (JPEG/PNG/WebP/HEIC, max 8MB).
-- **Role-based access.** Patients, caregivers, and providers each get their
+- **Role-based access.** Patients, Primary Carers, and providers each get their
   own portal and navigation; route guards keep each role in its own lane. A
-  caregiver only sees the permission scopes a patient granted
+  Primary Carer only sees the permission scopes a patient granted
   (`medications`, `appointments`, `symptoms`, `safety`).
 - **Offline-degrading.** With no `GEMINI_API_KEY`, the DB, routing,
   dashboards, and the safety net all still work.
 - **Role assistants.** Beyond the patient orchestrator, `/chat/assistant`
-  serves a **caregiver companion** (grounded in the linked patient's
+  serves a **Primary Carer companion** (grounded in the linked patient's
   permission-scoped data, with its own offline emergency net) and a
   **provider clinical copilot** (grounded in a live panel snapshot:
   adherence, risk scores + reasons, symptoms, open escalations). Both keep
@@ -306,7 +306,7 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 - **🎓 Learning Hub** (all roles) — short original courses with lesson
   checklists, progress bars, and printable certificates: clinical training
   for providers (diabetes management, telehealth, AI decision support),
-  skills for caregivers (home safety, dementia care, medication handling),
+  skills for Primary Carers (home safety, dementia care, medication handling),
   and plain-language education for patients. Demo content, marked
   not-accredited.
 - **Medications** — add a prescription, log each dose taken/missed (feeds
@@ -324,7 +324,7 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
   with its own *real* interactive tools (not just a link to chat):
   - 🥽 **Rehabilitation** → the full VR Rehab page (below).
   - 🧠 **Memory Care** → a real memory-matching card game, a routine-reminder
-    list, and a shortcut to the Caregiver Portal.
+    list, and a shortcut to the Primary Carer Portal.
   - ❤️ **Chronic Disease** → blood-glucose and blood-pressure loggers (write
     real entries via the API, visible on the dashboard/Analytics), and a
     shortcut to Analytics.
@@ -360,7 +360,7 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
     keyboard focus (Tab) or hover, and a "Read page" button reads the whole
     page on demand. Works alongside the device's built-in screen reader.
 
-### Caregiver portal — "Family Care Hub"
+### Primary Carer portal — "Family Care Hub"
 - Connect to a patient by ID and grant/adjust access scopes (re-granting
   updates the existing link, never duplicates it).
 - Patient hero card with a live status pulse, adherence/missed-dose/
@@ -370,7 +370,7 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
   toast for anything new. An urgent-alert banner surfaces the latest event.
 - **🚑 Request urgent review** — one button sends an escalation straight to
   the top of every provider's queue (reason pre-filled from the alert). When
-  the provider acknowledges or resolves it, the caregiver is notified back —
+  the provider acknowledges or resolves it, the Primary Carer is notified back —
   the loop is closed, not fire-and-forget.
 - **🧠 Understand tab** — an AI-written plain-language guide for worried
   family: which of the patient's current symptoms are *normal* for this
@@ -389,12 +389,12 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 ### Provider portal — clinical command center
 - **AI risk triage** — the roster is auto-ranked by a 0–100 risk score
   computed from real data (low/slipping adherence, rising pain trajectory,
-  high recent pain, open caregiver escalations, rehab drop-off), each row
+  high recent pain, open Primary Carer escalations, rehab drop-off), each row
   showing its top risk reason with the full explanation on hover. Rule-based
   and free, so it recomputes on every load.
-- **🚨 Urgent reviews queue** — caregiver escalations pinned in red at the
+- **🚨 Urgent reviews queue** — Primary Carer escalations pinned in red at the
   top of the rail with Acknowledge / Mark-reviewed actions (both notify the
-  caregiver back). New escalations arrive live via 20-second polling with a
+  Primary Carer back). New escalations arrive live via 20-second polling with a
   toast. Clicking one jumps to that patient.
 - **List-detail workspace**: click any patient for a five-tab detail pane —
   - **🧠 AI Summary** — Gemini pre-visit briefing (concerns, treatment,
@@ -438,7 +438,7 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 - Toast notification system for booking/cancelling/logging actions.
 - Skeleton loading states, a 404 page, and an offline banner
   (`navigator.onLine`).
-- Lazy-loaded routes (Analytics, Rehab, care modules, Caregiver/Provider
+- Lazy-loaded routes (Analytics, Rehab, care modules, Primary Carer/Provider
   dashboards) — Recharts (~340KB) only downloads when a chart page is
   actually opened.
 
@@ -537,8 +537,8 @@ Run the backend alongside it.
 | Route | Role | What it does |
 |-------|------|--------------|
 | `/login`, `/register` | anyone | Auth |
-| `/` | all | Home — patients see live stats; caregivers/providers redirect to their portal |
-| `/chat` | all | Role-specific AI: patients get the multi-agent companion (agent board, photo upload); caregivers a care-support assistant; providers a clinical copilot |
+| `/` | all | Home — patients see live stats; Primary Carers/providers redirect to their portal |
+| `/chat` | all | Role-specific AI: patients get the multi-agent companion (agent board, photo upload); Primary Carers a care-support assistant; providers a clinical copilot |
 | `/dashboard` | patient | Meds, appointments, symptoms, adherence |
 | `/appointments` | patient | Book / cancel appointments |
 | `/medications` | patient | Add meds, log doses taken/missed |
@@ -549,7 +549,7 @@ Run the backend alongside it.
 | `/care` | all | Specialized care modules directory (lazy-loaded) |
 | `/care/rehabilitation` | patient | 🥽 VR physiotherapy (lazy-loaded) |
 | `/care/:module` | all | Memory / Chronic / Respiratory / Pediatric / Maternity (lazy-loaded) |
-| `/caregiver` | caregiver | Permission-gated patient overview + alerts (lazy-loaded) |
+| `/caregiver` | Primary Carer | Permission-gated patient overview + alerts (lazy-loaded) |
 | `/provider` | provider | Patient table + AI summaries + charts + queue (lazy-loaded) |
 | `/accessibility` | all | Face control, screen reader, voice, large text, high contrast |
 | `*` (unmatched) | all | 404 page inside the shell (unauthenticated visitors are redirected to login) |
@@ -587,17 +587,17 @@ curl -s localhost:8000/rehab/patients/1/progress
 | POST | `/patients/symptoms` | Log a symptom |
 | GET  | `/patients/{id}/medications`, POST `/medications`, POST `/medications/log` | List / add / log a dose |
 | GET  | `/patients/{id}/appointments`, POST `/appointments`, DELETE `/appointments/{id}` | List / book / cancel |
-| POST | `/chat/assistant` | Role assistants: caregiver companion / provider copilot (role-checked) |
-| POST | `/caregivers/link` | Grant a caregiver scoped access (upserts — one link per pair) |
+| POST | `/chat/assistant` | Role assistants: Primary Carer companion / provider copilot (role-checked) |
+| POST | `/caregivers/link` | Grant a Primary Carer scoped access (upserts — one link per pair) |
 | GET  | `/caregivers/{cid}/patients/{pid}/overview` | Permission-gated view |
-| GET  | `/caregivers/{cid}/notifications` | Safety alerts for a caregiver |
+| GET  | `/caregivers/{cid}/notifications` | Safety alerts for a Primary Carer |
 | POST | `/caregivers/escalations` | Request an urgent provider review (requires care link) |
 | GET  | `/caregivers/{cid}/patients/{pid}/education` | AI "what's normal + red flags" guide for family |
 | GET  | `/providers/patients` | All patients, risk-scored + ranked with reasons |
 | GET  | `/providers/patients/{id}/summary` | AI pre-visit summary |
 | GET  | `/providers/patients/{id}/case-insights` | AI outcome comparison vs anonymized panel cases |
 | GET  | `/providers/escalations` | Open/acknowledged urgent review requests |
-| POST | `/providers/escalations/{id}/status` | Acknowledge/resolve (notifies the caregiver back) |
+| POST | `/providers/escalations/{id}/status` | Acknowledge/resolve (notifies the Primary Carer back) |
 | GET  | `/providers/appointments/queue` | Upcoming appointments across all patients |
 | GET  | `/analytics/patients/{id}`, `/analytics/population` | Patient insights (incl. dated pain + dose series for trend charts) / population |
 | GET  | `/rehab/exercises`, POST `/rehab/sessions`, GET `/rehab/patients/{id}/progress` | VR exercise catalog / log a session / points & level |
