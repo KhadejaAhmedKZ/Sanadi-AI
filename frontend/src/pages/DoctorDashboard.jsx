@@ -9,6 +9,7 @@ import { useVoice } from "../hooks/useVoice.js";
 import { api } from "../api/client.js";
 import Markdown from "../components/Markdown.jsx";
 import VideoVisit from "../components/VideoVisit.jsx";
+import BodyFigure, { intensityColor } from "../components/BodyFigure.jsx";
 import { ErrorNote, EmptyState } from "../components/ui.jsx";
 import { SkeletonList } from "../components/Skeleton.jsx";
 
@@ -47,6 +48,9 @@ export default function DoctorDashboard() {
   const [labForm, setLabForm] = useState({ test_name: "", value: "", unit: "", reference_range: "", status: "normal" });
   const [labSaving, setLabSaving] = useState(false);
   const [activeVisit, setActiveVisit] = useState(null);
+  const [bodyMap, setBodyMap] = useState({ latest: {}, history: [] });
+  const [bodySide, setBodySide] = useState("front");
+  const [bodyRegion, setBodyRegion] = useState(null);
 
   // Voice dictation for clinical notes (appends each finished phrase).
   const voice = useVoice({
@@ -93,6 +97,8 @@ export default function DoctorDashboard() {
     setLabs([]);
     api.patientAnalytics(patient.id).then(setAnalytics).catch(() => setAnalytics(null));
     api.labs(patient.id).then(setLabs).catch(() => setLabs([]));
+    setBodyRegion(null);
+    api.bodyAssessments(patient.id).then(setBodyMap).catch(() => setBodyMap({ latest: {}, history: [] }));
     try {
       const res = await api.aiSummary(patient.id);
       setSummary({ patient, text: res.summary });
@@ -348,6 +354,7 @@ export default function DoctorDashboard() {
                 <button className={"tab" + (detailTab === "trends" ? " active" : "")} onClick={() => setDetailTab("trends")}>📈 Trends</button>
                 <button className={"tab" + (detailTab === "insights" ? " active" : "")} onClick={() => setDetailTab("insights")}>🔍 Case Insights</button>
                 <button className={"tab" + (detailTab === "labs" ? " active" : "")} onClick={() => setDetailTab("labs")}>🧪 Labs</button>
+                <button className={"tab" + (detailTab === "body" ? " active" : "")} onClick={() => setDetailTab("body")}>🧍 Body Map</button>
                 <button className={"tab" + (detailTab === "notes" ? " active" : "")} onClick={() => setDetailTab("notes")}>📝 Clinical Notes</button>
                 <button className={"tab" + (detailTab === "schedule" ? " active" : "")} onClick={() => setDetailTab("schedule")}>📅 Schedule</button>
               </div>
@@ -485,6 +492,57 @@ export default function DoctorDashboard() {
                       </label>
                       <button className="btn" disabled={labSaving}>{labSaving ? "Saving…" : "Add"}</button>
                     </form>
+                  </div>
+                </div>
+              )}
+
+              {detailTab === "body" && (
+                <div className="grid cols-2" style={{ alignItems: "start" }}>
+                  <div className="card center" style={{ padding: 16 }}>
+                    <div className="tabs" style={{ justifyContent: "center", marginBottom: 8 }}>
+                      <button className={"tab" + (bodySide === "front" ? " active" : "")} onClick={() => setBodySide("front")}>Front</button>
+                      <button className={"tab" + (bodySide === "back" ? " active" : "")} onClick={() => setBodySide("back")}>Back</button>
+                    </div>
+                    <BodyFigure
+                      side={bodySide}
+                      latest={bodyMap.latest}
+                      selected={bodyRegion}
+                      onSelect={setBodyRegion}
+                    />
+                    <p className="muted" style={{ fontSize: ".76rem", marginTop: 6 }}>
+                      Patient-reported pain map · tap a dot for its history
+                    </p>
+                  </div>
+                  <div className="card">
+                    <h3 className="card-title">
+                      {bodyRegion ? `${bodyRegion} — history` : "Reported assessments"}
+                    </h3>
+                    <p className="card-sub">Logged by {selectedPatient.name} on their Body Map</p>
+                    {(bodyRegion
+                      ? bodyMap.history.filter((h) => h.region === bodyRegion)
+                      : bodyMap.history
+                    ).slice(0, 8).map((h) => (
+                      <div className="list-row" key={h.id}>
+                        <div className="lead">
+                          <span style={{ width: 11, height: 11, borderRadius: 99, background: intensityColor(h.intensity), flexShrink: 0 }} />
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: ".88rem" }}>
+                              {h.region} · {h.intensity}/10 {h.pain_type && `· ${h.pain_type}`}
+                            </div>
+                            <div className="muted" style={{ fontSize: ".76rem" }}>
+                              {[h.worse_with && `worse: ${h.worse_with}`, h.swelling && "swelling", h.redness && "redness", h.injury && "recent injury", h.notes]
+                                .filter(Boolean).join(" · ") || "no extra details"}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="badge gray">
+                          {new Date(h.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </span>
+                      </div>
+                    ))}
+                    {bodyMap.history.length === 0 && (
+                      <EmptyState icon="🧍" title="No body-map reports yet" />
+                    )}
                   </div>
                 </div>
               )}

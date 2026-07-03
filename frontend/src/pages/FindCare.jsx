@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { HOSPITALS, DOCTORS, SPECIALTIES } from "../data/directory.js";
 import { EmptyState } from "../components/ui.jsx";
@@ -16,8 +16,10 @@ function Stars({ rating }) {
 
 export default function FindCare() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState("hospitals");
-  const [specialty, setSpecialty] = useState("All");
+  const location = useLocation();
+  const preset = location.state?.specialty;
+  const [tab, setTab] = useState(preset ? "doctors" : "hospitals");
+  const [specialty, setSpecialty] = useState(preset && SPECIALTIES.includes(preset) ? preset : "All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("rating"); // rating | distance | wait
 

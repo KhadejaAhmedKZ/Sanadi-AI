@@ -7,6 +7,7 @@
 import {
   Home,
   MessageCircleMore,
+  PersonStanding,
   ClipboardList,
   CalendarDays,
   Pill,
@@ -28,6 +29,7 @@ export const NAV = {
       items: [
         { to: "/", icon: Home, label: "Home", end: true },
         { to: "/chat", icon: MessageCircleMore, label: "AI Assistant" },
+        { to: "/body-map", icon: PersonStanding, label: "Body Map" },
         { to: "/dashboard", icon: ClipboardList, label: "My Health" },
         { to: "/appointments", icon: CalendarDays, label: "Appointments" },
         { to: "/medications", icon: Pill, label: "Medications" },

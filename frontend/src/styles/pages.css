@@ -397,3 +397,20 @@
 }
 .cert-brand { color: var(--accent); font-weight: 800; letter-spacing: .14em; font-size: .72rem; }
 .cert-name { font-family: var(--font-display); font-size: 1.5rem; color: var(--accent); margin: 8px 0 4px; font-style: italic; }
+
+
+/* ---------- Body Map ---------- */
+.bodymap-shell { display: grid; grid-template-columns: 220px minmax(280px, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 1080px) { .bodymap-shell { grid-template-columns: 1fr; } }
+.body-figure { width: 100%; max-width: 300px; height: auto; }
+.bm-body { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+.bm-spine { stroke: var(--border); stroke-width: 2.5; stroke-dasharray: 3 5; stroke-linecap: round; }
+.bm-hotspot { cursor: pointer; }
+.bm-hotspot:hover circle:last-child { opacity: 1; stroke: var(--accent); stroke-width: 2; }
+.bm-pulse { animation: bm-pulse 1.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes bm-pulse { 0%,100% { opacity: .15; } 50% { opacity: .45; } }
+.bm-recent-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: none; border: none; padding: 7px 4px; border-radius: 10px; cursor: pointer;
+}
+.bm-recent-row:hover { background: var(--surface-2); }

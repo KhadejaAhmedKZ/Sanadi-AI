@@ -118,6 +118,11 @@ export const api = {
   logRehabSession: (payload) => request("/rehab/sessions", { method: "POST", body: payload }),
   rehabProgress: (id) => request(`/rehab/patients/${id}/progress`),
 
+  // Body map
+  bodyAssessments: (pid) => request(`/body/patients/${pid}/assessments`),
+  saveBodyAssessment: (payload) => request("/body/assessments", { method: "POST", body: payload }),
+  analyzeBodyAssessment: (id) => request(`/body/assessments/${id}/analyze`, { method: "POST" }),
+
   // Lab results
   labs: (pid) => request(`/labs/patients/${pid}`),
   addLab: (payload) => request("/labs", { method: "POST", body: payload }),

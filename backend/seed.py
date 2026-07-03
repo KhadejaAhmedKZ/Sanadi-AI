@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from backend.database import SessionLocal, init_db
-from backend.models import Appointment, LabResult, MedicationLog, RehabSession, SymptomLog, User, UserRole
+from backend.models import Appointment, BodyAssessment, LabResult, MedicationLog, RehabSession, SymptomLog, User, UserRole
 from backend.services import medication_service, patient_service
 from backend.utils.security import hash_password
 
@@ -102,6 +102,31 @@ LABS = {
         (14, "C-reactive protein", "1.2", "mg/L", "< 5", "normal", "full recovery confirmed"),
     ],
 }
+
+
+BODY_MAPS = {
+    "sara@example.com": [
+        (12, "Left Knee", "front", 7, "sharp", "after surgery", "Walking, stairs", True, False, False, "Pain increases after activity"),
+        (6, "Left Knee", "front", 4, "dull", "improving", "Long walks", False, False, False, "Better after rest days"),
+        (1, "Left Knee", "front", 2, "dull", "almost gone", "", False, False, False, "Feeling much steadier"),
+    ],
+    "ahmed@example.com": [
+        (5, "Lower Back", "back", 6, "throbbing", "1 week ago", "Sitting, bending", False, False, False, "Radiates to hips, poor sleep"),
+        (1, "Head", "front", 7, "throbbing", "this morning", "Bright light", False, False, False, "Felt faint briefly"),
+    ],
+}
+
+
+def _seed_body_maps(db, patient: User) -> None:
+    now = datetime.utcnow()
+    for days_ago, region, side, intensity, ptype, started, worse, sw, rd, inj, notes in BODY_MAPS.get(patient.email, []):
+        db.add(BodyAssessment(
+            patient_id=patient.id, region=region, side=side, intensity=intensity,
+            pain_type=ptype, started=started, worse_with=worse,
+            swelling=sw, redness=rd, injury=inj, notes=notes,
+            created_at=now - timedelta(days=days_ago, hours=4),
+        ))
+    db.commit()
 
 
 def _seed_labs_and_video(db, patient: User) -> None:
@@ -208,6 +233,7 @@ def seed() -> None:
                 )
             _seed_history(db, patient)
             _seed_labs_and_video(db, patient)
+            _seed_body_maps(db, patient)
             print(f"✓ Seeded patient {patient.name} (id={patient.id})")
 
         _seed_staff(db)

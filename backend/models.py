@@ -126,6 +126,26 @@ class Appointment(Base):
     )
 
 
+class BodyAssessment(Base):
+    """A body-map pain assessment — one region, one moment in time."""
+
+    __tablename__ = "body_assessments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    region: Mapped[str] = mapped_column(String(60))       # e.g. "Left Knee"
+    side: Mapped[str] = mapped_column(String(10), default="front")  # front|back
+    intensity: Mapped[int] = mapped_column(Integer, default=0)      # 0-10
+    pain_type: Mapped[str] = mapped_column(String(30), default="")  # sharp|dull|burning|throbbing
+    started: Mapped[str] = mapped_column(String(60), default="")    # e.g. "2 days ago"
+    worse_with: Mapped[str] = mapped_column(String(120), default="")
+    swelling: Mapped[bool] = mapped_column(Boolean, default=False)
+    redness: Mapped[bool] = mapped_column(Boolean, default=False)
+    injury: Mapped[bool] = mapped_column(Boolean, default=False)
+    notes: Mapped[str] = mapped_column(String(400), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class LabResult(Base):
     """A lab test result — added by a provider, visible to the patient."""
 
