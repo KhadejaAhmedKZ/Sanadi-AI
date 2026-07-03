@@ -5,15 +5,21 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Modern Pages deployment: build → upload artifact → deploy-pages.
+# (Previously published to a gh-pages branch for GitHub's legacy builder,
+# but that builder started failing with an opaque "Page build failed";
+# the artifact-based deployment bypasses it entirely.)
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: pages-deploy
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,14 +32,20 @@ jobs:
       - name: Build
         working-directory: frontend
         env:
-          # Set this repo variable to your Render backend URL, e.g.
-          # https://sanadi-ai-backend.onrender.com  (Settings → Secrets and
-          # variables → Actions → Variables → New variable: VITE_API_URL)
+          # Repo variable pointing at the Render backend URL, e.g.
+          # https://sanadi-ai-backend.onrender.com
           VITE_API_URL: ${{ vars.VITE_API_URL }}
         run: npm run build
-      - name: Publish to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/dist
-          publish_branch: gh-pages
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
