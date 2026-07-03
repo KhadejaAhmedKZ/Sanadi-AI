@@ -221,5 +221,85 @@ sequenceDiagram
 
 ---
 
+## 6. Context diagram (level 0)
+
+The system boundary with every external entity and the data that crosses it.
+Face control and voice run **on-device** — camera/microphone streams never
+leave the browser.
+
+```mermaid
+flowchart LR
+    P(["🧑 Patient"])
+    C(["👨‍👩‍👧 Caregiver"])
+    D(["👨‍⚕️ Provider"])
+    G[["🤖 Google Gemini API"]]
+    U[["🇦🇪 UAE PASS<br/>(simulated)"]]
+    B[["🎥 Browser device APIs<br/>MediaPipe · Web Speech"]]
+
+    S{{"**Sanadi AI Platform**<br/>React SPA · FastAPI · SQLite<br/>GitHub Pages + Render"}}
+
+    P -- "messages · photos · bookings · dose logs" --> S
+    S -- "replies · reminders · rehab levels · alerts" --> P
+    C -- "scope grants · urgent review requests" --> S
+    S -- "scoped overview · live safety alerts · AI guide" --> C
+    D -- "acknowledge/resolve · clinical notes" --> S
+    S -- "risk-ranked panel · briefings · escalation queue" --> D
+    S -- "one prompt per message" --> G
+    G -- "reply + structured actions (sanitized)" --> S
+    U -. "sign-in identity (visual demo only)" .-> S
+    B -. "head/blink cursor · dictation (on-device)" .-> S
+```
+
+---
+
+## 7. Finite state machines
+
+### 7.1 Escalation lifecycle
+
+The core of the connected-care loop — mirrors the `EscalationStatus` enum.
+An open escalation adds **+30** to the patient's risk score; every transition
+notifies the caregiver back.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Open : caregiver raises<br/>(care link verified, 403 otherwise)
+    Open --> Open : re-raise — reason updated,<br/>never duplicated
+    Open --> Acknowledged : provider acknowledges<br/>→ caregiver notified "reviewing"
+    Open --> Resolved : provider resolves directly
+    Acknowledged --> Resolved : provider marks reviewed
+    Resolved --> [*]
+
+    note right of Open
+        notify all providers
+        patient risk +30
+    end note
+    note right of Resolved
+        caregiver notified ✓
+        risk contribution cleared
+    end note
+```
+
+### 7.2 Patient chat message lifecycle
+
+Every message walks this machine; the emergency branch never touches the AI.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Received
+    Received --> EmergencyReply : offline keyword hit<br/>(0 API calls)
+    EmergencyReply --> CaregiversAlerted : notify "safety" scope
+    CaregiversAlerted --> [*]
+
+    Received --> SingleGeminiCall : screened safe
+    SingleGeminiCall --> FallbackReply : API error / rate limit
+    FallbackReply --> [*]
+    SingleGeminiCall --> ActionsApplied : structured actions present
+    SingleGeminiCall --> Replied : reply only
+    ActionsApplied --> Replied : appointment booked /<br/>symptom logged (clamped 0-10)
+    Replied --> [*] : saved to conversation memory
+```
+
+---
+
 *Also documented in this repo:* [README](../README.md) — full feature list,
 API reference, architecture layout, and deployment topology.
