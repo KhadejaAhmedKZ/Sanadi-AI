@@ -4,6 +4,7 @@ import { useToast } from "../context/ToastContext.jsx";
 import { api } from "../api/client.js";
 import { EmptyState, ErrorNote } from "../components/ui.jsx";
 import { SkeletonList } from "../components/Skeleton.jsx";
+import VideoVisit from "../components/VideoVisit.jsx";
 
 const DEPARTMENTS = ["General", "Cardiology", "Orthopedics", "Physiotherapy", "Neurology", "Pediatrics", "Respiratory", "Maternity"];
 
@@ -14,8 +15,9 @@ export default function Appointments() {
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ department: "General", reason: "", scheduled_for: "" });
+  const [form, setForm] = useState({ department: "General", reason: "", scheduled_for: "", is_video: false });
   const [saving, setSaving] = useState(false);
+  const [activeVisit, setActiveVisit] = useState(null); // appointment being joined
 
   async function load() {
     setLoading(true);
@@ -41,8 +43,9 @@ export default function Appointments() {
         department: form.department,
         reason: form.reason,
         scheduled_for: form.scheduled_for,
+        is_video: form.is_video,
       });
-      setForm({ department: "General", reason: "", scheduled_for: "" });
+      setForm({ department: "General", reason: "", scheduled_for: "", is_video: false });
       await load();
       toast.success("Appointment booked ✓");
     } catch (e) { setError(e.message); toast.error(e.message); }
@@ -87,6 +90,15 @@ export default function Appointments() {
               <span>Date & time</span>
               <input type="datetime-local" value={form.scheduled_for} onChange={(e) => setForm({ ...form, scheduled_for: e.target.value })} required />
             </label>
+            <label className="badge gray" style={{ padding: "10px 14px", cursor: "pointer", marginBottom: 14, display: "inline-flex" }}>
+              <input
+                type="checkbox"
+                checked={form.is_video}
+                onChange={(e) => setForm({ ...form, is_video: e.target.checked })}
+                style={{ width: "auto", marginRight: 8 }}
+              />
+              📹 Video visit — meet the doctor online
+            </label>
             <button className="btn block" disabled={saving}>{saving ? "Booking…" : "📅 Book appointment"}</button>
           </form>
         </div>
@@ -100,14 +112,17 @@ export default function Appointments() {
             appts.map((a) => (
               <div className="list-row" key={a.id}>
                 <div className="lead">
-                  <div className="dot">🏥</div>
+                  <div className="dot">{a.is_video ? "📹" : "🏥"}</div>
                   <div>
-                    <div style={{ fontWeight: 700 }}>{a.department}</div>
+                    <div style={{ fontWeight: 700 }}>{a.department}{a.is_video ? " · video" : ""}</div>
                     <div className="muted" style={{ fontSize: ".82rem" }}>{a.reason || "General"} · {fmt(a.scheduled_for)}</div>
                   </div>
                 </div>
                 <div className="row">
                   <span className={"badge " + (a.status === "cancelled" ? "gray" : a.status === "completed" ? "green" : "")}>{a.status}</span>
+                  {a.status === "scheduled" && a.is_video && (
+                    <button className="btn sm" onClick={() => setActiveVisit(a)}>📹 Join</button>
+                  )}
                   {a.status === "scheduled" && (
                     <button className="btn danger sm" onClick={() => cancel(a.id)}>Cancel</button>
                   )}
@@ -117,6 +132,8 @@ export default function Appointments() {
           )}
         </div>
       </div>
+
+      {activeVisit && <VideoVisit appointment={activeVisit} onClose={() => setActiveVisit(null)} />}
     </div>
   );
 }

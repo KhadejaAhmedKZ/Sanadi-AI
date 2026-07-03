@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from backend.database import SessionLocal, init_db
-from backend.models import MedicationLog, RehabSession, SymptomLog, User, UserRole
+from backend.models import Appointment, LabResult, MedicationLog, RehabSession, SymptomLog, User, UserRole
 from backend.services import medication_service, patient_service
 from backend.utils.security import hash_password
 
@@ -81,6 +81,47 @@ HISTORY = {
         ],
     },
 }
+
+
+LABS = {
+    "sara@example.com": [
+        (10, "Hemoglobin", "13.4", "g/dL", "12.0-15.5", "normal", ""),
+        (10, "White blood cells", "6.8", "x10⁹/L", "4.0-11.0", "normal", ""),
+        (10, "C-reactive protein", "4.1", "mg/L", "< 5", "normal", "post-surgery inflammation settling"),
+        (10, "Vitamin D", "22", "ng/mL", "30-100", "low", "supplement recommended for bone healing"),
+    ],
+    "ahmed@example.com": [
+        (7, "HbA1c", "8.9", "%", "< 7.0", "high", "diabetes control slipping"),
+        (7, "Fasting glucose", "165", "mg/dL", "70-100", "high", ""),
+        (7, "LDL cholesterol", "148", "mg/dL", "< 100", "high", ""),
+        (7, "Blood pressure (clinic)", "152/94", "mmHg", "< 130/80", "high", "consistent with home readings"),
+        (7, "Creatinine", "1.0", "mg/dL", "0.7-1.3", "normal", "kidneys OK"),
+    ],
+    "fatima@example.com": [
+        (14, "Hemoglobin", "13.9", "g/dL", "12.0-15.5", "normal", ""),
+        (14, "C-reactive protein", "1.2", "mg/L", "< 5", "normal", "full recovery confirmed"),
+    ],
+}
+
+
+def _seed_labs_and_video(db, patient: User) -> None:
+    now = datetime.utcnow()
+    for days_ago, test, value, unit, ref, status, notes in LABS.get(patient.email, []):
+        db.add(LabResult(
+            patient_id=patient.id, test_name=test, value=value, unit=unit,
+            reference_range=ref, status=status, notes=notes,
+            taken_at=now - timedelta(days=days_ago, hours=6),
+        ))
+    # A scheduled video visit for each demo patient, so the Join button is
+    # ready to demo on both sides.
+    db.add(Appointment(
+        patient_id=patient.id,
+        department="Telehealth — follow-up",
+        reason="Video check-in with Dr. Hassan",
+        scheduled_for=now + timedelta(days=1, hours=2),
+        is_video=True,
+    ))
+    db.commit()
 
 
 def _seed_history(db, patient: User) -> None:
@@ -166,6 +207,7 @@ def seed() -> None:
                     db, patient.id, sym["description"], sym.get("pain_level")
                 )
             _seed_history(db, patient)
+            _seed_labs_and_video(db, patient)
             print(f"✓ Seeded patient {patient.name} (id={patient.id})")
 
         _seed_staff(db)

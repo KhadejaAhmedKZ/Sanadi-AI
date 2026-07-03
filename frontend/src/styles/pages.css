@@ -360,3 +360,23 @@
   width: 90px; text-align: center; font-size: 1.3rem; font-weight: 800;
   font-family: var(--font-display); padding: 4px 8px; border-radius: 10px;
 }
+
+/* ---------- Video visit (telehealth) ---------- */
+.video-overlay {
+  position: fixed; inset: 0; z-index: 2500; background: rgba(8, 12, 24, .72);
+  backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 18px;
+}
+.video-panel {
+  width: min(1080px, 100%); height: min(720px, 92vh); background: var(--surface);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden;
+}
+.video-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.video-panel iframe { flex: 1; border: none; width: 100%; background: #0d1117; }
+.video-foot { padding: 8px 16px; font-size: .74rem; border-top: 1px solid var(--border); }
+
+/* ---------- Lab results ---------- */
+.lab-row { display: grid; grid-template-columns: 1.4fr .9fr 1fr auto; gap: 10px; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--border); }
+.lab-row:last-child { border-bottom: none; }
+.lab-row .test { font-weight: 700; }
+.lab-row .range { color: var(--muted); font-size: .8rem; }
+@media (max-width: 700px) { .lab-row { grid-template-columns: 1fr auto; } .lab-row .range, .lab-row .when { display: none; } }

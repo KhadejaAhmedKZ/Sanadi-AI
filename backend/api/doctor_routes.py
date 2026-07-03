@@ -73,6 +73,7 @@ def appointment_queue(days: int = 7, db: Session = Depends(get_db)):
             "department": a.department,
             "reason": a.reason,
             "scheduled_for": a.scheduled_for,
+            "is_video": a.is_video,
         }
         for a in rows
     ]

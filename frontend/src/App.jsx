@@ -9,6 +9,7 @@ import Chat from "./pages/Chat.jsx";
 import PatientDashboard from "./pages/PatientDashboard.jsx";
 import Appointments from "./pages/Appointments.jsx";
 import Medications from "./pages/Medications.jsx";
+import Labs from "./pages/Labs.jsx";
 import Accessibility from "./pages/Accessibility.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import { SkeletonStatGrid, SkeletonList } from "./components/Skeleton.jsx";
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/dashboard" element={<RequireRole role="patient"><PatientDashboard /></RequireRole>} />
         <Route path="/appointments" element={<RequireRole role="patient"><Appointments /></RequireRole>} />
         <Route path="/medications" element={<RequireRole role="patient"><Medications /></RequireRole>} />
+        <Route path="/labs" element={<RequireRole role="patient"><Labs /></RequireRole>} />
         <Route path="/analytics" element={<RequireRole role="patient"><LazyPage><Analytics /></LazyPage></RequireRole>} />
         <Route path="/care/rehabilitation" element={<RequireRole role="patient"><LazyPage><Rehab /></LazyPage></RequireRole>} />
         {/* Role portals */}

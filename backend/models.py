@@ -118,11 +118,28 @@ class Appointment(Base):
     status: Mapped[AppointmentStatus] = mapped_column(
         Enum(AppointmentStatus), default=AppointmentStatus.scheduled
     )
+    is_video: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     patient: Mapped["User"] = relationship(
         back_populates="appointments", foreign_keys=[patient_id]
     )
+
+
+class LabResult(Base):
+    """A lab test result — added by a provider, visible to the patient."""
+
+    __tablename__ = "lab_results"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    test_name: Mapped[str] = mapped_column(String(160))
+    value: Mapped[str] = mapped_column(String(60))
+    unit: Mapped[str] = mapped_column(String(40), default="")
+    reference_range: Mapped[str] = mapped_column(String(80), default="")
+    status: Mapped[str] = mapped_column(String(20), default="normal")  # normal|high|low
+    notes: Mapped[str] = mapped_column(String(300), default="")
+    taken_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class SymptomLog(Base):

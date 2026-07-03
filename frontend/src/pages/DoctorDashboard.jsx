@@ -8,6 +8,7 @@ import { useLocalStorage } from "../hooks/useLocalStorage.js";
 import { useVoice } from "../hooks/useVoice.js";
 import { api } from "../api/client.js";
 import Markdown from "../components/Markdown.jsx";
+import VideoVisit from "../components/VideoVisit.jsx";
 import { ErrorNote, EmptyState } from "../components/ui.jsx";
 import { SkeletonList } from "../components/Skeleton.jsx";
 
@@ -42,6 +43,10 @@ export default function DoctorDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [insights, setInsights] = useState(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [labs, setLabs] = useState([]);
+  const [labForm, setLabForm] = useState({ test_name: "", value: "", unit: "", reference_range: "", status: "normal" });
+  const [labSaving, setLabSaving] = useState(false);
+  const [activeVisit, setActiveVisit] = useState(null);
 
   // Voice dictation for clinical notes (appends each finished phrase).
   const voice = useVoice({
@@ -85,7 +90,9 @@ export default function DoctorDashboard() {
     setSummaryLoading(true);
     setInsights(null);
     setAnalytics(null);
+    setLabs([]);
     api.patientAnalytics(patient.id).then(setAnalytics).catch(() => setAnalytics(null));
+    api.labs(patient.id).then(setLabs).catch(() => setLabs([]));
     try {
       const res = await api.aiSummary(patient.id);
       setSummary({ patient, text: res.summary });
@@ -106,6 +113,22 @@ export default function DoctorDashboard() {
       toast.error(e.message);
     } finally {
       setInsightsLoading(false);
+    }
+  }
+
+  async function saveLab(e) {
+    e.preventDefault();
+    if (!selectedPatient || !labForm.test_name.trim() || !labForm.value.trim()) return;
+    setLabSaving(true);
+    try {
+      await api.addLab({ ...labForm, patient_id: selectedPatient.id, provider_id: user.id });
+      setLabForm({ test_name: "", value: "", unit: "", reference_range: "", status: "normal" });
+      setLabs(await api.labs(selectedPatient.id));
+      toast.success("Result added — the patient can see it now");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLabSaving(false);
     }
   }
 
@@ -324,6 +347,7 @@ export default function DoctorDashboard() {
                 <button className={"tab" + (detailTab === "summary" ? " active" : "")} onClick={() => setDetailTab("summary")}>🧠 AI Summary</button>
                 <button className={"tab" + (detailTab === "trends" ? " active" : "")} onClick={() => setDetailTab("trends")}>📈 Trends</button>
                 <button className={"tab" + (detailTab === "insights" ? " active" : "")} onClick={() => setDetailTab("insights")}>🔍 Case Insights</button>
+                <button className={"tab" + (detailTab === "labs" ? " active" : "")} onClick={() => setDetailTab("labs")}>🧪 Labs</button>
                 <button className={"tab" + (detailTab === "notes" ? " active" : "")} onClick={() => setDetailTab("notes")}>📝 Clinical Notes</button>
                 <button className={"tab" + (detailTab === "schedule" ? " active" : "")} onClick={() => setDetailTab("schedule")}>📅 Schedule</button>
               </div>
@@ -413,6 +437,58 @@ export default function DoctorDashboard() {
                 </div>
               )}
 
+              {detailTab === "labs" && (
+                <div className="grid" style={{ gap: 20 }}>
+                  <div className="card">
+                    <h3 className="card-title">🧪 Lab results</h3>
+                    <p className="card-sub">Visible to {selectedPatient.name} in their Lab Results page</p>
+                    {labs.length === 0 ? (
+                      <EmptyState icon="🧪" title="No results on file" />
+                    ) : labs.map((l) => (
+                      <div className="lab-row" key={l.id}>
+                        <div>
+                          <div className="test">{l.test_name}</div>
+                          {l.notes && <div className="muted" style={{ fontSize: ".76rem" }}>{l.notes}</div>}
+                        </div>
+                        <div style={{ fontWeight: 700 }}>{l.value} <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>{l.unit}</span></div>
+                        <div className="range">ref {l.reference_range || "—"}</div>
+                        <span className={"badge " + (l.status === "high" ? "red" : l.status === "low" ? "amber" : "green")}>{l.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="card">
+                    <h3 className="card-title">Add a result</h3>
+                    <form onSubmit={saveLab} className="row wrap" style={{ gap: 10, alignItems: "flex-end" }}>
+                      <label className="field" style={{ flex: "1 1 160px", marginBottom: 0 }}>
+                        <span>Test</span>
+                        <input value={labForm.test_name} onChange={(e) => setLabForm({ ...labForm, test_name: e.target.value })} placeholder="e.g. HbA1c" required />
+                      </label>
+                      <label className="field" style={{ flex: "0 1 110px", marginBottom: 0 }}>
+                        <span>Value</span>
+                        <input value={labForm.value} onChange={(e) => setLabForm({ ...labForm, value: e.target.value })} placeholder="7.2" required />
+                      </label>
+                      <label className="field" style={{ flex: "0 1 100px", marginBottom: 0 }}>
+                        <span>Unit</span>
+                        <input value={labForm.unit} onChange={(e) => setLabForm({ ...labForm, unit: e.target.value })} placeholder="%" />
+                      </label>
+                      <label className="field" style={{ flex: "0 1 130px", marginBottom: 0 }}>
+                        <span>Reference</span>
+                        <input value={labForm.reference_range} onChange={(e) => setLabForm({ ...labForm, reference_range: e.target.value })} placeholder="< 7.0" />
+                      </label>
+                      <label className="field" style={{ flex: "0 1 110px", marginBottom: 0 }}>
+                        <span>Flag</span>
+                        <select value={labForm.status} onChange={(e) => setLabForm({ ...labForm, status: e.target.value })}>
+                          <option value="normal">normal</option>
+                          <option value="high">high</option>
+                          <option value="low">low</option>
+                        </select>
+                      </label>
+                      <button className="btn" disabled={labSaving}>{labSaving ? "Saving…" : "Add"}</button>
+                    </form>
+                  </div>
+                </div>
+              )}
+
               {detailTab === "notes" && (
                 <div className="card">
                   <div className="row between" style={{ flexWrap: "wrap", gap: 10 }}>
@@ -449,8 +525,13 @@ export default function DoctorDashboard() {
                   ) : (
                     patientQueue.map((a) => (
                       <div className="list-row" key={a.id}>
-                        <div className="lead"><div className="dot">🏥</div><div>{a.department} {a.reason ? `— ${a.reason}` : ""}</div></div>
-                        <span className="badge">{new Date(a.scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
+                        <div className="lead"><div className="dot">{a.is_video ? "📹" : "🏥"}</div><div>{a.department} {a.reason ? `— ${a.reason}` : ""}</div></div>
+                        <div className="row">
+                          <span className="badge">{new Date(a.scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
+                          {a.is_video && (
+                            <button className="btn sm" onClick={() => setActiveVisit(a)}>📹 Join</button>
+                          )}
+                        </div>
                       </div>
                     ))
                   )}
@@ -460,6 +541,8 @@ export default function DoctorDashboard() {
           )}
         </AnimatePresence>
       </div>
+
+      {activeVisit && <VideoVisit appointment={activeVisit} onClose={() => setActiveVisit(null)} />}
     </div>
   );
 }

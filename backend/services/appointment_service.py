@@ -28,6 +28,7 @@ def book(
     department: str = "General",
     reason: str = "",
     provider_id: int | None = None,
+    is_video: bool = False,
 ) -> Appointment:
     appt = Appointment(
         patient_id=patient_id,
@@ -35,6 +36,7 @@ def book(
         department=department,
         reason=reason,
         provider_id=provider_id,
+        is_video=is_video,
     )
     db.add(appt)
     db.commit()

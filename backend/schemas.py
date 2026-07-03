@@ -89,6 +89,7 @@ class AppointmentCreate(BaseModel):
     reason: str = ""
     scheduled_for: datetime
     provider_id: int | None = None
+    is_video: bool = False
 
 
 class AppointmentOut(BaseModel):
@@ -98,6 +99,7 @@ class AppointmentOut(BaseModel):
     reason: str
     scheduled_for: datetime
     status: AppointmentStatus
+    is_video: bool = False
 
 
 # ---------- Symptoms ----------

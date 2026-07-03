@@ -31,6 +31,7 @@ def create_appt(payload: AppointmentCreate, db: Session = Depends(get_db)):
         scheduled_for=payload.scheduled_for,
         department=payload.department,
         reason=payload.reason,
+        is_video=payload.is_video,
         provider_id=payload.provider_id,
     )
 
