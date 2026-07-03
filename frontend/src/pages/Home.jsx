@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useLocalStorage } from "../hooks/useLocalStorage.js";
 import { api } from "../api/client.js";
 import ProgressRing from "../components/ProgressRing.jsx";
 import AnimatedCounter from "../components/AnimatedCounter.jsx";
 import { SkeletonStatGrid, SkeletonCard } from "../components/Skeleton.jsx";
-import { dailyWellness, extractVital, computeHealthScore } from "../utils/wellness.js";
+import { extractVital, computeHealthScore } from "../utils/wellness.js";
 
 const QUICK = [
   { to: "/chat", icon: "💬", title: "Ask the AI", sub: "Clinical, appointments & more" },
@@ -15,7 +16,15 @@ const QUICK = [
   { to: "/care/rehabilitation", icon: "🥽", title: "VR Rehab", sub: "Guided physiotherapy" },
 ];
 
-const WEATHER = { icon: "☀️", temp: 24, condition: "Sunny", place: "Demo location" };
+// User-entered vitals — no simulated numbers. Empty until the patient types
+// their own values (tap a tile to edit).
+const SELF_VITALS = [
+  { key: "heartRate", icon: "❤️", label: "Heart rate", suffix: " bpm", accent: "#ef4444" },
+  { key: "sleep", icon: "😴", label: "Sleep", suffix: " h", accent: "#06b6d4" },
+  { key: "steps", icon: "👣", label: "Steps", suffix: "", accent: "#14b8a6" },
+  { key: "water", icon: "💧", label: "Water", suffix: " cups", accent: "#0ea5e9" },
+  { key: "weight", icon: "⚖️", label: "Weight", suffix: " kg", accent: "#f97316" },
+];
 
 function fadeUp(delay = 0) {
   return {
@@ -25,11 +34,56 @@ function fadeUp(delay = 0) {
   };
 }
 
+function EditableVital({ icon, label, suffix, accent, value, onSave, delay }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  function commit() {
+    onSave(draft.trim() || null);
+    setEditing(false);
+  }
+
+  return (
+    <motion.div
+      className="stat-card editable"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.35 }}
+      whileHover={{ y: -3 }}
+      onClick={() => { if (!editing) { setDraft(value ?? ""); setEditing(true); } }}
+      title={`Tap to ${value ? "update" : "log"} your ${label.toLowerCase()}`}
+    >
+      <div className="stat-icon" style={{ background: accent + "1c" }}>{icon}</div>
+      {editing ? (
+        <input
+          className="vital-input"
+          autoFocus
+          inputMode="decimal"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          aria-label={`Enter your ${label.toLowerCase()}`}
+        />
+      ) : (
+        <div className="stat-value">
+          {value ? `${value}${suffix}` : <span className="vital-empty">+ Add</span>}
+        </div>
+      )}
+      <div className="stat-label">{label}</div>
+    </motion.div>
+  );
+}
+
 export default function Home() {
   const { user } = useAuth();
   const [dash, setDash] = useState(null);
   const [rehab, setRehab] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [myVitals, setMyVitals] = useLocalStorage(`sanadi_vitals_${user?.id ?? "anon"}`, {});
   const isPatient = user?.role === "patient";
 
   useEffect(() => {
@@ -45,7 +99,6 @@ export default function Home() {
 
   const firstName = user?.name?.split(" ")[0] || "there";
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-  const wellness = dailyWellness(user?.id ?? 0);
 
   const painLevels = (dash?.recent_symptoms ?? [])
     .filter((s) => s.pain_level != null)
@@ -62,17 +115,13 @@ export default function Home() {
   const loggedGlucose = extractVital(dash?.recent_symptoms, "Blood glucose:");
   const loggedBp = extractVital(dash?.recent_symptoms, "Blood pressure:");
 
+  // Tracked automatically from real app data.
   const stats = [
-    { icon: "❤️", label: "Heart rate", value: wellness.heartRate, suffix: " bpm", accent: "#ef4444" },
     { icon: "🩸", label: "Blood pressure", value: loggedBp || "—", accent: "#f59e0b", raw: true },
     { icon: "💉", label: "Blood glucose", value: loggedGlucose || "—", accent: "#8b5cf6", raw: true },
     { icon: "📈", label: "Recovery", value: rehab ? Math.min(rehab.level * 20, 100) : 0, suffix: "%", accent: "#22c55e" },
     { icon: "✅", label: "Adherence", value: dash ? Math.round(dash.adherence_rate * 100) : 0, suffix: "%", accent: "#2563eb" },
     { icon: "📅", label: "Appointments", value: dash?.appointments?.length ?? 0, accent: "#6366f1" },
-    { icon: "😴", label: "Sleep", value: wellness.sleepHours, suffix: "h", accent: "#06b6d4", decimals: 1 },
-    { icon: "👣", label: "Steps", value: wellness.steps, accent: "#14b8a6" },
-    { icon: "💧", label: "Water", value: wellness.water, suffix: " cups", accent: "#0ea5e9" },
-    { icon: "🔥", label: "Calories", value: wellness.calories, suffix: " kcal", accent: "#f97316" },
   ];
 
   return (
@@ -87,13 +136,6 @@ export default function Home() {
           <p style={{ margin: "10px 0 0", opacity: .95 }}>Your AI healthcare team is ready. How can we support you today?</p>
         </div>
         <div className="row" style={{ position: "relative", zIndex: 1, gap: 18, flexWrap: "wrap" }}>
-          <div className="weather-chip">
-            <span style={{ fontSize: "1.4rem" }}>{WEATHER.icon}</span>
-            <div>
-              <div style={{ fontWeight: 800 }}>{WEATHER.temp}°C · {WEATHER.condition}</div>
-              <div style={{ fontSize: ".72rem", opacity: .85 }}>{WEATHER.place} (demo)</div>
-            </div>
-          </div>
           <Link to="/chat" className="btn lg" style={{ background: "rgba(255,255,255,.22)" }}>
             💬 Start a conversation
           </Link>
@@ -170,7 +212,11 @@ export default function Home() {
       </div>
 
       <div>
-        <h2 style={{ marginBottom: 14 }}>Today's vitals & activity</h2>
+        <h2 style={{ marginBottom: 4 }}>Today's vitals & activity</h2>
+        <p className="muted" style={{ margin: "0 0 14px", fontSize: ".88rem" }}>
+          Tracked values come from your real app activity. The tiles marked "+ Add"
+          are yours to fill in — tap one to log today's number. Nothing is simulated.
+        </p>
         {loading ? <SkeletonStatGrid count={4} /> : (
           <div className="grid cols-4">
             {stats.map((s, i) => (
@@ -188,6 +234,15 @@ export default function Home() {
                 </div>
                 <div className="stat-label">{s.label}</div>
               </motion.div>
+            ))}
+            {SELF_VITALS.map((v, i) => (
+              <EditableVital
+                key={v.key}
+                {...v}
+                delay={(stats.length + i) * 0.04}
+                value={myVitals[v.key]}
+                onSave={(val) => setMyVitals({ ...myVitals, [v.key]: val })}
+              />
             ))}
           </div>
         )}

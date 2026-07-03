@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  HeartPulse, Mail, Lock, Eye, EyeOff, UserRound,
+  HeartPulse, Mail, Lock, Eye, EyeOff, UserRound, Fingerprint, Loader2,
   User, Users, Stethoscope,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -26,8 +26,15 @@ export default function Register() {
     accessibility_needs: "",
   });
   const [showPw, setShowPw] = useState(false);
+  const [uaeState, setUaeState] = useState("idle"); // idle | connecting | note
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function uaePass() {
+    if (uaeState === "connecting") return;
+    setUaeState("connecting");
+    setTimeout(() => setUaeState("note"), 1600);
+  }
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -88,6 +95,33 @@ export default function Register() {
         <motion.div className="inner" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h2>Create account</h2>
           <p className="muted mb">It only takes a minute.</p>
+
+          <button type="button" className="btn-uaepass" onClick={uaePass} disabled={uaeState === "connecting"} style={{ marginBottom: 6 }}>
+            <span className="flag-stripe" aria-hidden="true" />
+            <span className="brand-mark">
+              {uaeState === "connecting"
+                ? <Loader2 size={17} className="spin" aria-hidden="true" />
+                : <Fingerprint size={17} aria-hidden="true" />}
+            </span>
+            {uaeState === "connecting" ? "Connecting to UAE PASS…" : "Continue with UAE PASS"}
+          </button>
+          <AnimatePresence>
+            {uaeState === "note" && (
+              <motion.div
+                className="uaepass-note"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                🇦🇪 <strong>UAE PASS is simulated in this demo</strong> — in production
+                your profile would come from your national digital identity. For now,
+                register below.
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="auth-divider"><span>or register manually</span></div>
+
           <form onSubmit={submit}>
             <label className="field" style={{ marginBottom: 14 }}>
               <span>I am a…</span>

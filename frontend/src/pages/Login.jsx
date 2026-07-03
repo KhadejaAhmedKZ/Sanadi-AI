@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  HeartPulse, Mail, Lock, Eye, EyeOff, ChevronRight,
+  HeartPulse, Mail, Lock, Eye, EyeOff, ChevronRight, Fingerprint, Loader2,
   User, Users, Stethoscope,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -22,6 +22,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [uaeState, setUaeState] = useState("idle"); // idle | connecting | note
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false); // false | true | email-of-demo
 
@@ -41,6 +43,12 @@ export default function Login() {
   function submit(e) {
     e.preventDefault();
     doLogin(email, password);
+  }
+
+  function uaePass() {
+    if (uaeState === "connecting") return;
+    setUaeState("connecting");
+    setTimeout(() => setUaeState("note"), 1600);
   }
 
   return (
@@ -117,48 +125,30 @@ export default function Login() {
         >
           <h2>Welcome back</h2>
           <p className="muted mb">Sign in to your health companion.</p>
-          <form onSubmit={submit}>
-            <label className="field">
-              <span>Email</span>
-              <div className="input-icon-field">
-                <span className="lead-ico"><Mail size={16} aria-hidden="true" /></span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-            </label>
-            <label className="field">
-              <span>Password</span>
-              <div className="pw-field input-icon-field">
-                <span className="lead-ico"><Lock size={16} aria-hidden="true" /></span>
-                <input
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  required
-                />
-                <button type="button" className="pw-toggle" onClick={() => setShowPw((s) => !s)} aria-label={showPw ? "Hide password" : "Show password"}>
-                  {showPw ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
-                </button>
-              </div>
-            </label>
-            <ErrorNote message={error} />
-            <motion.button
-              className="btn block lg gradient mt"
-              disabled={!!loading}
-              whileHover={{ scale: loading ? 1 : 1.01 }}
-              whileTap={{ scale: loading ? 1 : 0.98 }}
-            >
-              {loading === true ? "Signing in…" : "Sign In"}
-            </motion.button>
-          </form>
+
+          <button type="button" className="btn-uaepass" onClick={uaePass} disabled={uaeState === "connecting"}>
+            <span className="flag-stripe" aria-hidden="true" />
+            <span className="brand-mark">
+              {uaeState === "connecting"
+                ? <Loader2 size={17} className="spin" aria-hidden="true" />
+                : <Fingerprint size={17} aria-hidden="true" />}
+            </span>
+            {uaeState === "connecting" ? "Connecting to UAE PASS…" : "Sign in with UAE PASS"}
+          </button>
+          <AnimatePresence>
+            {uaeState === "note" && (
+              <motion.div
+                className="uaepass-note"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                🇦🇪 <strong>UAE PASS is simulated in this demo</strong> — the production
+                app would authenticate with your national digital identity here. For
+                now, continue with a demo account below.
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="auth-divider"><span>or try a demo account</span></div>
           <div className="demo-chips">
@@ -183,6 +173,70 @@ export default function Login() {
               </button>
             ))}
           </div>
+
+          <ErrorNote message={error} />
+
+          <p className="auth-switch" style={{ marginTop: 18 }}>
+            <button
+              type="button"
+              className="linklike"
+              onClick={() => setShowEmailForm((s) => !s)}
+              style={{ background: "none", border: "none", padding: 0, color: "var(--primary)", fontWeight: 600, fontSize: ".92rem" }}
+            >
+              {showEmailForm ? "Hide email sign-in" : "Sign in with email instead"}
+            </button>
+          </p>
+
+          <AnimatePresence>
+            {showEmailForm && (
+              <motion.form
+                onSubmit={submit}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{ overflow: "hidden" }}
+              >
+                <label className="field">
+                  <span>Email</span>
+                  <div className="input-icon-field">
+                    <span className="lead-ico"><Mail size={16} aria-hidden="true" /></span>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      required
+                    />
+                  </div>
+                </label>
+                <label className="field">
+                  <span>Password</span>
+                  <div className="pw-field input-icon-field">
+                    <span className="lead-ico"><Lock size={16} aria-hidden="true" /></span>
+                    <input
+                      type={showPw ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      required
+                    />
+                    <button type="button" className="pw-toggle" onClick={() => setShowPw((s) => !s)} aria-label={showPw ? "Hide password" : "Show password"}>
+                      {showPw ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                    </button>
+                  </div>
+                </label>
+                <motion.button
+                  className="btn block lg gradient"
+                  disabled={!!loading}
+                  whileTap={{ scale: loading ? 1 : 0.98 }}
+                >
+                  {loading === true ? "Signing in…" : "Sign In"}
+                </motion.button>
+              </motion.form>
+            )}
+          </AnimatePresence>
 
           <p className="auth-switch">
             New here? <Link to="/register">Create an account</Link>

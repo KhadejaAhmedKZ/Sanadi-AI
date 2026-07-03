@@ -336,3 +336,35 @@
 .demo-chip .role-mail { font-size: .74rem; color: var(--muted); }
 .demo-chip .go { margin-left: auto; color: var(--muted); display: inline-flex; }
 .demo-chip:hover .go { color: var(--primary); }
+
+/* ---------- UAE PASS (visual sign-in treatment) ---------- */
+.btn-uaepass {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 11px;
+  background: #0d1117; color: #fff; border: 1px solid #1f2a37; border-radius: 14px;
+  min-height: 54px; font-weight: 700; font-size: 1rem; padding: 12px 20px;
+  position: relative; overflow: hidden; transition: transform .12s ease, box-shadow .2s ease;
+  box-shadow: var(--shadow-sm);
+}
+.btn-uaepass:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn-uaepass:disabled { opacity: .75; }
+.btn-uaepass .flag-stripe {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 7px;
+  background: linear-gradient(180deg, #00843d 0 33%, #ffffff 33% 66%, #ef3340 66% 100%);
+}
+.btn-uaepass .brand-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 9px; background: #00843d; color: #fff; flex-shrink: 0;
+}
+.uaepass-note {
+  border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2);
+  padding: 12px 14px; font-size: .85rem; line-height: 1.55; color: var(--muted); margin-top: 10px;
+}
+
+/* ---------- Editable vitals (user-entered, no simulated data) ---------- */
+.stat-card.editable { cursor: pointer; }
+.stat-card.editable:hover { border-color: var(--primary); }
+.stat-card .vital-empty { color: var(--muted); font-size: 1rem; font-weight: 700; }
+.stat-card input.vital-input {
+  width: 90px; text-align: center; font-size: 1.3rem; font-weight: 800;
+  font-family: var(--font-display); padding: 4px 8px; border-radius: 10px;
+}
