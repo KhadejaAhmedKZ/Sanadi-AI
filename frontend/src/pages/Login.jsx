@@ -1,48 +1,34 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  HeartPulse, Mail, Lock, Eye, EyeOff, ChevronRight, Fingerprint, Loader2,
-  User, Users, Stethoscope,
-} from "lucide-react";
+import { HeartPulse, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorNote } from "../components/ui.jsx";
 
 const AGENTS = ["🧠 Orchestrator", "👨‍⚕️ Clinical", "📅 Operations", "💬 Engagement", "♿ Accessibility", "📊 Analytics", "🛡️ Safety", "🥽 Rehab / VR"];
 
-const DEMO_ACCOUNTS = [
-  { role: "Patient", email: "sara@example.com", icon: User, bg: "var(--gradient-primary)" },
-  { role: "Caregiver", email: "care@example.com", icon: Users, bg: "var(--gradient-secondary)" },
-  { role: "Provider", email: "doctor@example.com", icon: Stethoscope, bg: "var(--gradient-warm)" },
-];
-
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("sara@example.com");
+  const [password, setPassword] = useState("demo1234");
   const [showPw, setShowPw] = useState(false);
-  const [showEmailForm, setShowEmailForm] = useState(false);
   const [uaeState, setUaeState] = useState("idle"); // idle | connecting | note
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // false | true | email-of-demo
+  const [loading, setLoading] = useState(false);
 
-  async function doLogin(mail, pw, marker = true) {
+  async function submit(e) {
+    e.preventDefault();
     setError("");
-    setLoading(marker);
+    setLoading(true);
     try {
-      await login(mail, pw);
+      await login(email, password);
       navigate("/");
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }
-
-  function submit(e) {
-    e.preventDefault();
-    doLogin(email, password);
   }
 
   function uaePass() {
@@ -125,16 +111,65 @@ export default function Login() {
         >
           <h2>Welcome back</h2>
           <p className="muted mb">Sign in to your health companion.</p>
+          <form onSubmit={submit}>
+            <label className="field">
+              <span>Email</span>
+              <div className="input-icon-field">
+                <span className="lead-ico"><Mail size={16} aria-hidden="true" /></span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+            </label>
+            <label className="field">
+              <span>Password</span>
+              <div className="pw-field input-icon-field">
+                <span className="lead-ico"><Lock size={16} aria-hidden="true" /></span>
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+                <button type="button" className="pw-toggle" onClick={() => setShowPw((s) => !s)} aria-label={showPw ? "Hide password" : "Show password"}>
+                  {showPw ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                </button>
+              </div>
+            </label>
+            <ErrorNote message={error} />
+            <motion.button
+              className="btn block lg gradient mt"
+              disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.01 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
+            >
+              {loading ? "Signing in…" : "Sign In"}
+            </motion.button>
+          </form>
 
-          <button type="button" className="btn-uaepass" onClick={uaePass} disabled={uaeState === "connecting"}>
-            <span className="flag-stripe" aria-hidden="true" />
-            <span className="brand-mark">
+          <div className="auth-divider"><span>or continue with</span></div>
+          <div className="row" style={{ gap: 10 }}>
+            <button
+              type="button"
+              className="btn-uaepass"
+              style={{ flex: 1, minHeight: 48 }}
+              onClick={uaePass}
+              disabled={uaeState === "connecting"}
+            >
               {uaeState === "connecting"
                 ? <Loader2 size={17} className="spin" aria-hidden="true" />
-                : <Fingerprint size={17} aria-hidden="true" />}
-            </span>
-            {uaeState === "connecting" ? "Connecting to UAE PASS…" : "Sign in with UAE PASS"}
-          </button>
+                : <span style={{ fontSize: "1.25rem", lineHeight: 1 }} aria-hidden="true">🇦🇪</span>}
+              {uaeState === "connecting" ? "Connecting…" : "UAE PASS"}
+            </button>
+            <button type="button" className="btn secondary block" style={{ flex: 1 }} disabled title="Face ID — coming soon">
+              <span>🆔</span> Face ID
+            </button>
+          </div>
           <AnimatePresence>
             {uaeState === "note" && (
               <motion.div
@@ -144,103 +179,21 @@ export default function Login() {
                 exit={{ opacity: 0, height: 0 }}
               >
                 🇦🇪 <strong>UAE PASS is simulated in this demo</strong> — the production
-                app would authenticate with your national digital identity here. For
-                now, continue with a demo account below.
+                app would authenticate with your national digital identity here. Use a
+                demo account below for now.
               </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="auth-divider"><span>or try a demo account</span></div>
-          <div className="demo-chips">
-            {DEMO_ACCOUNTS.map((d) => (
-              <button
-                key={d.email}
-                type="button"
-                className="demo-chip"
-                disabled={!!loading}
-                onClick={() => doLogin(d.email, "demo1234", d.email)}
-              >
-                <span className="avatar-sm" style={{ background: d.bg }}>
-                  <d.icon size={17} aria-hidden="true" />
-                </span>
-                <span>
-                  <span className="role-name" style={{ display: "block" }}>
-                    {loading === d.email ? "Signing in…" : `Continue as ${d.role}`}
-                  </span>
-                  <span className="role-mail">{d.email}</span>
-                </span>
-                <span className="go"><ChevronRight size={17} aria-hidden="true" /></span>
-              </button>
-            ))}
-          </div>
-
-          <ErrorNote message={error} />
-
-          <p className="auth-switch" style={{ marginTop: 18 }}>
-            <button
-              type="button"
-              className="linklike"
-              onClick={() => setShowEmailForm((s) => !s)}
-              style={{ background: "none", border: "none", padding: 0, color: "var(--primary)", fontWeight: 600, fontSize: ".92rem" }}
-            >
-              {showEmailForm ? "Hide email sign-in" : "Sign in with email instead"}
-            </button>
-          </p>
-
-          <AnimatePresence>
-            {showEmailForm && (
-              <motion.form
-                onSubmit={submit}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                style={{ overflow: "hidden" }}
-              >
-                <label className="field">
-                  <span>Email</span>
-                  <div className="input-icon-field">
-                    <span className="lead-ico"><Mail size={16} aria-hidden="true" /></span>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                      required
-                    />
-                  </div>
-                </label>
-                <label className="field">
-                  <span>Password</span>
-                  <div className="pw-field input-icon-field">
-                    <span className="lead-ico"><Lock size={16} aria-hidden="true" /></span>
-                    <input
-                      type={showPw ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      required
-                    />
-                    <button type="button" className="pw-toggle" onClick={() => setShowPw((s) => !s)} aria-label={showPw ? "Hide password" : "Show password"}>
-                      {showPw ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
-                    </button>
-                  </div>
-                </label>
-                <motion.button
-                  className="btn block lg gradient"
-                  disabled={!!loading}
-                  whileTap={{ scale: loading ? 1 : 0.98 }}
-                >
-                  {loading === true ? "Signing in…" : "Sign In"}
-                </motion.button>
-              </motion.form>
             )}
           </AnimatePresence>
 
           <p className="auth-switch">
             New here? <Link to="/register">Create an account</Link>
           </p>
+          <div className="muted" style={{ fontSize: ".8rem", marginTop: 20, lineHeight: 1.7 }}>
+            <strong>Demo accounts</strong> (password: demo1234)
+            <div>👤 Patient — sara@example.com</div>
+            <div>👨‍👩‍👧 Caregiver — care@example.com</div>
+            <div>👨‍⚕️ Provider — doctor@example.com</div>
+          </div>
         </motion.div>
       </div>
     </div>

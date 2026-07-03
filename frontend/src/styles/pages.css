@@ -347,14 +347,6 @@
 }
 .btn-uaepass:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
 .btn-uaepass:disabled { opacity: .75; }
-.btn-uaepass .flag-stripe {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 7px;
-  background: linear-gradient(180deg, #00843d 0 33%, #ffffff 33% 66%, #ef3340 66% 100%);
-}
-.btn-uaepass .brand-mark {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: 9px; background: #00843d; color: #fff; flex-shrink: 0;
-}
 .uaepass-note {
   border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2);
   padding: 12px 14px; font-size: .85rem; line-height: 1.55; color: var(--muted); margin-top: 10px;

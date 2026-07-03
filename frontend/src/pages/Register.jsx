@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  HeartPulse, Mail, Lock, Eye, EyeOff, UserRound, Fingerprint, Loader2,
+  HeartPulse, Mail, Lock, Eye, EyeOff, UserRound, Loader2,
   User, Users, Stethoscope,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -97,12 +97,9 @@ export default function Register() {
           <p className="muted mb">It only takes a minute.</p>
 
           <button type="button" className="btn-uaepass" onClick={uaePass} disabled={uaeState === "connecting"} style={{ marginBottom: 6 }}>
-            <span className="flag-stripe" aria-hidden="true" />
-            <span className="brand-mark">
-              {uaeState === "connecting"
-                ? <Loader2 size={17} className="spin" aria-hidden="true" />
-                : <Fingerprint size={17} aria-hidden="true" />}
-            </span>
+            {uaeState === "connecting"
+              ? <Loader2 size={17} className="spin" aria-hidden="true" />
+              : <span style={{ fontSize: "1.25rem", lineHeight: 1 }} aria-hidden="true">🇦🇪</span>}
             {uaeState === "connecting" ? "Connecting to UAE PASS…" : "Continue with UAE PASS"}
           </button>
           <AnimatePresence>
