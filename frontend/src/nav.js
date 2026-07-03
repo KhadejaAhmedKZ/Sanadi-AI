@@ -14,7 +14,6 @@ import {
   HeartPulse,
   Glasses,
   Users,
-  BookOpenText,
   Stethoscope,
   Accessibility,
 } from "lucide-react";
@@ -47,7 +46,6 @@ export const NAV = {
         { to: "/", icon: Home, label: "Home", end: true },
         { to: "/caregiver", icon: Users, label: "Caregiver Portal" },
         { to: "/chat", icon: MessageCircleMore, label: "AI Assistant" },
-        { to: "/care", icon: BookOpenText, label: "Care Guides" },
       ],
     },
   ],

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 const AccessibilityContext = createContext(null);
 
@@ -41,6 +41,19 @@ export function AccessibilityProvider({ children }) {
   }, []);
 
   const stopSpeaking = useCallback(() => window.speechSynthesis?.cancel(), []);
+
+  // Immediate spoken confirmation when the 🔊 toggle flips — otherwise it
+  // only affects future chat replies and feels dead when clicked.
+  const prevVoiceRef = useRef(settings.voiceEnabled);
+  useEffect(() => {
+    if (prevVoiceRef.current === settings.voiceEnabled) return;
+    prevVoiceRef.current = settings.voiceEnabled;
+    speak(
+      settings.voiceEnabled
+        ? "Voice replies on. I'll read AI answers out loud."
+        : "Voice replies off."
+    );
+  }, [settings.voiceEnabled, speak]);
 
   const value = useMemo(
     () => ({ settings, toggle, speak, stopSpeaking }),
