@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import { api } from "../api/client.js";
@@ -15,7 +16,14 @@ export default function Appointments() {
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ department: "General", reason: "", scheduled_for: "", is_video: false });
+  const location = useLocation();
+  const prefill = location.state || {};
+  const [form, setForm] = useState({
+    department: prefill.department || "General",
+    reason: prefill.place ? `Visit at ${prefill.place}` : "",
+    scheduled_for: "",
+    is_video: false,
+  });
   const [saving, setSaving] = useState(false);
   const [activeVisit, setActiveVisit] = useState(null); // appointment being joined
 

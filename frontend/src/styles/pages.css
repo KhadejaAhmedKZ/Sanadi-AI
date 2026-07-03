@@ -380,3 +380,20 @@
 .lab-row .test { font-weight: 700; }
 .lab-row .range { color: var(--muted); font-size: .8rem; }
 @media (max-width: 700px) { .lab-row { grid-template-columns: 1fr auto; } .lab-row .range, .lab-row .when { display: none; } }
+
+/* ---------- Find Care directory ---------- */
+.stars { color: #f59e0b; font-size: .9rem; white-space: nowrap; }
+.stars .stars-dim { opacity: .25; }
+.stars b { color: var(--text); font-size: .85rem; }
+
+/* ---------- Learning Hub ---------- */
+.learn-progress { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.learn-progress-fill { height: 100%; border-radius: 99px; background: var(--gradient-secondary); transition: width .4s ease; }
+.lesson-row { padding: 12px 4px; border-bottom: 1px solid var(--border); }
+.lesson-row:last-of-type { border-bottom: none; }
+.cert-card { max-width: 560px; width: 100%; }
+.cert-inner {
+  border: 3px double #b08d2f; border-radius: 14px; padding: 28px 24px; text-align: center;
+}
+.cert-brand { color: var(--accent); font-weight: 800; letter-spacing: .14em; font-size: .72rem; }
+.cert-name { font-family: var(--font-display); font-size: 1.5rem; color: var(--accent); margin: 8px 0 4px; font-style: italic; }

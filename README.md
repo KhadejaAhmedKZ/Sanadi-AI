@@ -45,7 +45,37 @@ box.
 
 ## 🏆 Judging criteria
 
-*Reviewed by the judging panel between 13–19 July 2026.*
+*Reviewed by the judging panel between 13–19 July 2026 (each judge scores
+1–10 per dimension). Round 2 finalists demo live on 26 July — 7 minutes of
+working prototype + 5 minutes of Q&A, with Presentation Quality added as a
+sixth dimension.*
+
+### Rules compliance & disclosure
+
+- **Data & privacy — no real patient data, ever.** Every patient, caregiver,
+  provider, symptom, dose log, lab result, appointment, hospital, doctor
+  profile, and course in this app is **synthetic**, authored for this
+  prototype (`backend/seed.py`, `backend/data/`, `frontend/src/data/`). The
+  "Find Care" directory and Learning Hub content are explicitly labeled
+  fictional in the UI. No PHI, no real identities, no scraped datasets.
+- **Originality.** All application logic, system design, and integration
+  were created by the participant within the 22 June – 12 July 2026 build
+  window — the full git history in this repository is the audit trail.
+- **Tools disclosure (as required):**
+  - *AI tools:* Claude Code (AI pair-programming for code generation and
+    review), Google Gemini API (`gemini-2.x` via the official `google-genai`
+    SDK — the product's runtime AI for chat, vision, summaries, and
+    insights).
+  - *Open-source libraries:* FastAPI, SQLAlchemy, Pydantic, Uvicorn, passlib
+    + bcrypt (backend); React, Vite, React Router, Framer Motion, Recharts,
+    Lucide (frontend); MediaPipe Tasks Vision (on-device face control);
+    Jitsi Meet (open-source video calls); Web Speech API (browser-native
+    voice).
+  - *Infrastructure:* GitHub Pages (frontend hosting), Render free tier
+    (backend hosting), GitHub Actions (CI/CD).
+- **Self-funded:** built entirely on free tiers — the engineering
+  consequences of that constraint (single-call orchestration, rule-based
+  triage) are documented under Technical Execution below.
 
 ### Problem Fit — 20%
 
@@ -262,7 +292,23 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 - **My Health dashboard** — medications, upcoming appointments, and a recent
   symptom timeline with color-coded pain badges.
 - **Appointments** — book (department, reason, date/time) and cancel; list of
-  scheduled/completed/cancelled visits.
+  scheduled/completed/cancelled visits. Any appointment can be a **📹 video
+  visit**: both patient and doctor get a Join button that opens the same
+  in-app Jitsi Meet room (open source, peer-to-peer — video never touches
+  Sanadi's servers).
+- **🧪 Lab Results** — results added by the care team, shown with reference
+  ranges and normal/high/low badges, plus an **"Explain my results"** AI
+  card that translates them to plain language without diagnosing.
+- **🏥 Find Care** — a directory of top-rated hospitals and doctors
+  (fictional demo data, labeled as such): search, filter by specialty, sort
+  by rating/distance/wait time, and one tap pre-fills the booking form with
+  the right department.
+- **🎓 Learning Hub** (all roles) — short original courses with lesson
+  checklists, progress bars, and printable certificates: clinical training
+  for providers (diabetes management, telehealth, AI decision support),
+  skills for caregivers (home safety, dementia care, medication handling),
+  and plain-language education for patients. Demo content, marked
+  not-accredited.
 - **Medications** — add a prescription, log each dose taken/missed (feeds
   adherence rate everywhere else in the app).
 - **Analytics** — Recharts area chart of the pain trend, adherence progress
@@ -359,6 +405,8 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
     outcome snapshots of the rest of the panel: what worked in similar
     cases, what preceded setbacks, and three actions to keep this patient
     off the failure path.
+  - **🧪 Labs** — view the patient's results and add new ones with an
+    inline form (provider-only endpoint); the patient sees them instantly.
   - **📝 Clinical Notes** — private per-patient notes with **🎙️ hands-free
     voice dictation** (Web Speech), persisted in the browser.
   - **📅 Schedule** — the patient's upcoming visits.
@@ -494,6 +542,9 @@ Run the backend alongside it.
 | `/dashboard` | patient | Meds, appointments, symptoms, adherence |
 | `/appointments` | patient | Book / cancel appointments |
 | `/medications` | patient | Add meds, log doses taken/missed |
+| `/labs` | patient | Lab results with reference ranges + AI plain-language explanation |
+| `/find-care` | patient | Hospital & doctor directory (fictional) → prefilled booking |
+| `/learn` | all | Learning Hub — role-based courses with certificates |
 | `/analytics` | patient | Adherence + pain-trend charts (lazy-loaded) |
 | `/care` | all | Specialized care modules directory (lazy-loaded) |
 | `/care/rehabilitation` | patient | 🥽 VR physiotherapy (lazy-loaded) |
@@ -550,6 +601,7 @@ curl -s localhost:8000/rehab/patients/1/progress
 | GET  | `/providers/appointments/queue` | Upcoming appointments across all patients |
 | GET  | `/analytics/patients/{id}`, `/analytics/population` | Patient insights (incl. dated pain + dose series for trend charts) / population |
 | GET  | `/rehab/exercises`, POST `/rehab/sessions`, GET `/rehab/patients/{id}/progress` | VR exercise catalog / log a session / points & level |
+| GET  | `/labs/patients/{id}`, POST `/labs`, GET `/labs/patients/{id}/explain` | View / add (provider-only) / AI-explain lab results |
 | GET  | `/care/modules` | Specialized care module metadata |
 | GET  | `/health` | Liveness + whether Gemini is online |
 

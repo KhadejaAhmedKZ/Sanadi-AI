@@ -15,6 +15,8 @@ const TITLES = {
   "/appointments": "Appointments",
   "/medications": "Medications",
   "/labs": "Lab Results",
+  "/find-care": "Find Care",
+  "/learn": "Learning Hub",
   "/analytics": "Analytics",
   "/care": "Specialized Care",
   "/care/rehabilitation": "VR Rehabilitation",
