@@ -10,6 +10,7 @@ import PatientDashboard from "./pages/PatientDashboard.jsx";
 import Appointments from "./pages/Appointments.jsx";
 import Medications from "./pages/Medications.jsx";
 import Labs from "./pages/Labs.jsx";
+import Meals from "./pages/Meals.jsx";
 import FindCare from "./pages/FindCare.jsx";
 import BodyMap from "./pages/BodyMap.jsx";
 import Monitoring from "./pages/Monitoring.jsx";
@@ -77,6 +78,7 @@ export default function App() {
         <Route path="/appointments" element={<RequireRole role="patient"><Appointments /></RequireRole>} />
         <Route path="/medications" element={<RequireRole role="patient"><Medications /></RequireRole>} />
         <Route path="/labs" element={<RequireRole role="patient"><Labs /></RequireRole>} />
+        <Route path="/meals" element={<RequireRole role="patient"><Meals /></RequireRole>} />
         <Route path="/find-care" element={<RequireRole role="patient"><FindCare /></RequireRole>} />
         <Route path="/body-map" element={<RequireRole role="patient"><BodyMap /></RequireRole>} />
         <Route path="/monitoring" element={<RequireRole role="patient"><Monitoring /></RequireRole>} />

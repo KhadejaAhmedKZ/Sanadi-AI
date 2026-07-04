@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from backend.database import SessionLocal, init_db
-from backend.models import Appointment, BodyAssessment, LabResult, MedicationLog, RehabSession, SymptomLog, User, UserRole
+from backend.models import Appointment, BodyAssessment, LabResult, Meal, MedicationLog, RehabSession, SymptomLog, User, UserRole
 from backend.services import medication_service, patient_service
 from backend.utils.security import hash_password
 
@@ -115,6 +115,26 @@ BODY_MAPS = {
         (1, "Head", "front", 7, "throbbing", "this morning", "Bright light", False, False, False, "Felt faint briefly"),
     ],
 }
+
+
+MEALS = {
+    "sara@example.com": [
+        (6, "text", "Grilled chicken salad with olive oil", "A great choice — lean protein for tissue repair and healthy fats to support your knee recovery. Keep it up!", False),
+        (2, "photo", "Meal photo", "Looks like a balanced plate of vegetables and grilled fish — excellent for recovery. Nicely done.", False),
+    ],
+    "ahmed@example.com": [
+        (5, "text", "Two glazed donuts and sweet karak tea", "This is quite high in sugar, which can spike blood sugar — with Type 2 Diabetes, try to keep sweet treats occasional and pair them with protein.", True),
+        (1, "text", "Grilled fish with salad", "Good pick — lean protein and fibre with little added sugar, which is kind to your blood sugar. Well chosen.", False),
+    ],
+}
+
+
+def _seed_meals(db, patient: User) -> None:
+    now = datetime.utcnow()
+    for hrs_ago, kind, desc, note, flagged in MEALS.get(patient.email, []):
+        db.add(Meal(patient_id=patient.id, kind=kind, description=desc, ai_note=note,
+                    flagged=flagged, created_at=now - timedelta(hours=hrs_ago)))
+    db.commit()
 
 
 def _seed_body_maps(db, patient: User) -> None:
@@ -234,6 +254,7 @@ def seed() -> None:
             _seed_history(db, patient)
             _seed_labs_and_video(db, patient)
             _seed_body_maps(db, patient)
+            _seed_meals(db, patient)
             print(f"✓ Seeded patient {patient.name} (id={patient.id})")
 
         _seed_staff(db)

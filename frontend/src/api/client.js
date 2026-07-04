@@ -128,6 +128,22 @@ export const api = {
   monitoringRespond: (id, status) => request(`/monitoring/events/${id}/respond`, { method: "POST", body: { status } }),
   monitoringEvents: (pid) => request(`/monitoring/patients/${pid}/events`),
 
+  // Meals / nutrition
+  meals: (pid) => request(`/meals/patients/${pid}`),
+  logMeal: (payload) => request("/meals", { method: "POST", body: payload }),
+  logMealImage: async (patient_id, file, note) => {
+    const form = new FormData();
+    form.append("patient_id", patient_id);
+    form.append("note", note || "");
+    form.append("image", file);
+    let res;
+    try { res = await fetch(`${BASE}/meals/image`, { method: "POST", body: form }); }
+    catch { throw new Error(NETWORK_ERROR_MSG); }
+    const data = await parseBody(res);
+    if (!res.ok) throw errorFrom(res, data);
+    return data;
+  },
+
   // Lab results
   labs: (pid) => request(`/labs/patients/${pid}`),
   addLab: (payload) => request("/labs", { method: "POST", body: payload }),

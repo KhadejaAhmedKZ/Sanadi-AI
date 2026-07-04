@@ -174,6 +174,20 @@ class SymptomLog(Base):
     patient: Mapped["User"] = relationship(back_populates="symptoms")
 
 
+class Meal(Base):
+    """A logged meal — typed or from a photo — with AI nutrition feedback."""
+
+    __tablename__ = "meals"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    kind: Mapped[str] = mapped_column(String(10), default="text")  # text | photo
+    description: Mapped[str] = mapped_column(String(500))
+    ai_note: Mapped[str] = mapped_column(Text, default="")
+    flagged: Mapped[bool] = mapped_column(Boolean, default=False)  # concern for this patient
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class Message(Base):
     """Conversation history for the orchestrator's memory."""
 

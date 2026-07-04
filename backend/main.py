@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.ai.gemini_client import gemini
 from backend.api import (
     body_routes,
+    meal_routes,
     monitoring_routes,
     lab_routes,
     analytics_routes,
@@ -92,6 +93,7 @@ for module in (
     care_routes,
     lab_routes,
     body_routes,
+    meal_routes,
     monitoring_routes,
 ):
     app.include_router(module.router)

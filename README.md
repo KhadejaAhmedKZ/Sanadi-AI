@@ -317,6 +317,11 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 - **🧪 Lab Results** — results added by the care team, shown with reference
   ranges and normal/high/low badges, plus an **"Explain my results"** AI
   card that translates them to plain language without diagnosing.
+- **🍎 What I Ate** — log meals by **typing them or uploading a photo**;
+  Gemini gives friendly nutrition feedback grounded in the patient's
+  conditions (e.g. flags a high-sugar meal for a diabetic patient), with a
+  "today" summary and a full meal log. Guidance only, non-diagnostic; photos
+  are analyzed, not stored.
 - **🧍 Body Map** — an interactive anatomical figure (semi-realistic male &
   female bodies, front and back) with **55+ selectable regions** across the
   head, neck, chest/heart, back, arms, hands, abdomen, hips, groin, and legs.
@@ -652,6 +657,7 @@ Run the backend alongside it.
 | `/appointments` | patient | Book / cancel appointments |
 | `/medications` | patient | Add meds, log doses taken/missed |
 | `/labs` | patient | Lab results with reference ranges + AI plain-language explanation |
+| `/meals` | patient | Log meals (text or photo) → AI nutrition feedback |
 | `/body-map` | patient | Interactive 55+ region anatomical pain assessment |
 | `/monitoring` | patient | AI Vision Emergency Monitoring (on-device fall detection) |
 | `/find-care` | patient | Hospital & doctor directory (fictional) → prefilled booking |
@@ -714,6 +720,7 @@ curl -s localhost:8000/rehab/patients/1/progress
 | GET  | `/analytics/patients/{id}`, `/analytics/population` | Patient insights (incl. dated pain + dose series for trend charts) / population |
 | GET  | `/rehab/exercises`, POST `/rehab/sessions`, GET `/rehab/patients/{id}/progress` | VR exercise catalog / log a session / points & level |
 | GET  | `/labs/patients/{id}`, POST `/labs`, GET `/labs/patients/{id}/explain` | View / add (provider-only) / AI-explain lab results |
+| POST | `/meals`, POST `/meals/image`, GET `/meals/patients/{id}` | Log a meal (text / photo) with AI feedback, list meals |
 | POST | `/body/assessments`, GET `/body/patients/{id}/assessments`, POST `/body/assessments/{id}/analyze` | Body-map: log a region, list, AI preliminary assessment |
 | POST | `/monitoring/events`, POST `/monitoring/events/{id}/respond`, GET `/monitoring/patients/{id}/events` | Emergency monitoring: record event, respond (OK/help/auto-escalate → alerts Primary Carer), history |
 | GET  | `/care/modules` | Specialized care module metadata |
