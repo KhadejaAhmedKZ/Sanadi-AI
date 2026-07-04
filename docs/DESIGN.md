@@ -35,6 +35,10 @@ flowchart LR
             UC5([Complete VR rehab session])
             UC6([Use care-module tools])
             UC7([Enable accessibility modes:<br/>face control, screen reader, TTS])
+            UC21([Body-map pain assessment<br/>55+ regions])
+            UC22([AI Vision emergency monitoring<br/>on-device pose / fall detection])
+            UC23([View labs · Find Care · Learning Hub])
+            UC24([Join video visit])
         end
         subgraph CG["Primary care support"]
             UC8([Link to patient with<br/>permission scopes])
@@ -55,9 +59,9 @@ flowchart LR
         end
     end
 
-    P --- UC0 & UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7
+    P --- UC0 & UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC21 & UC22 & UC23 & UC24
     C --- UC0 & UC8 & UC9 & UC10 & UC11 & UC12 & UC13
-    D --- UC0 & UC14 & UC15 & UC16 & UC17 & UC18 & UC19 & UC20
+    D --- UC0 & UC14 & UC15 & UC16 & UC17 & UC18 & UC19 & UC20 & UC24
 
     UC1 -. «include» .-> UC1c
     UC1b -. «extend» .-> UC1
@@ -65,9 +69,12 @@ flowchart LR
     UC1 -. «include» .-> UC3
     UC1c -. triggers .-> UC10
     UC11 -. feeds .-> UC18
+    UC21 -. «include» .-> UC1c
+    UC21 -. routes to .-> UC23
+    UC22 -. triggers .-> UC10
     UC18 -. notifies .-> UC10
 
-    UC1 & UC1b & UC12 & UC13 & UC15 & UC16 & UC20 -.-> G
+    UC1 & UC1b & UC12 & UC13 & UC15 & UC16 & UC20 & UC21 -.-> G
 ```
 
 \* UAE PASS is a simulated visual integration in the demo.
@@ -216,6 +223,46 @@ sequenceDiagram
         API->>GM: what worked / what preceded setbacks
         GM-->>API: grounded briefing
         API-->>PFE: insights + cases_analyzed
+    end
+```
+
+---
+
+## 5b. Sequence diagram — AI Vision emergency monitoring (on-device)
+
+Pose detection runs entirely in the browser; frames never leave the device.
+Only the emergency *event* and the patient's response touch the server.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Pt as Patient
+    participant CAM as Browser camera
+    participant POSE as MediaPipe Pose (on-device)
+    participant FE as Monitoring page
+    participant API as FastAPI
+    participant DB as SQLite
+    actor Cg as Primary Carer
+
+    Pt->>FE: Enable monitoring (explicit consent)
+    FE->>CAM: getUserMedia (camera on)
+    loop ~8 fps, on-device
+        CAM-->>POSE: video frame (never uploaded)
+        POSE-->>FE: body landmarks
+        FE->>FE: draw skeleton + update "AI observations"
+    end
+    Note over FE: Sustained horizontal posture / rapid drop → fall
+    FE->>API: POST /monitoring/events (possible_fall)
+    API->>DB: save event (status=detected)
+    FE-->>Pt: 🚨 full-screen popup + 30s countdown
+
+    alt Patient taps "I'm OK"
+        FE->>API: respond confirmed_ok
+        API->>DB: status=confirmed_ok (false alarm)
+    else No response / "I need help"
+        FE->>API: respond help_needed | auto_escalated
+        API->>DB: status + notify Primary Carers (safety scope)
+        API-->>Cg: 🚨 emergency notification (patient, event, time)
     end
 ```
 

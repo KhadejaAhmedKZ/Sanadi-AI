@@ -4,14 +4,31 @@
 
 Sanadi AI is a full-stack, **deployed** healthcare platform: a FastAPI + Gemini
 multi-agent backend, and a premium, animated React frontend with role-based
-portals for patients, Primary Carers, and providers. **Every role gets its own
-AI** — a multi-agent companion for patients (with photo analysis), a
-care-support assistant for family Primary Carers, and a clinical copilot for
-providers — plus a live **connected-care escalation loop** (patient emergency
-→ Primary Carer alert → provider triage → Primary Carer notified back), AI risk
-triage, outcome-based case insights, an interactive VR rehabilitation module,
-six specialized care modules, a full hands-free/screen-reader accessibility
-suite, dark mode, and live charts.
+portals for patients, Primary Carers, and providers.
+
+**Every role gets its own AI** — a multi-agent companion for patients (with
+photo analysis), a care-support assistant for family Primary Carers, and a
+clinical copilot for providers. On top of that:
+
+- 🧍 **Interactive Body Map** — a semi-realistic male/female anatomical figure
+  with **55+ selectable regions**, per-region pain assessment, AI specialist
+  routing, and a clinical view for doctors.
+- 🛡️ **AI Vision Emergency Monitoring** — optional on-device pose-AI that
+  detects falls, shows a live skeleton of what it sees, and auto-alerts the
+  Primary Carer on no-response.
+- 🔁 **Connected-care escalation loop** — patient emergency → Primary Carer
+  alert → provider triage → Primary Carer notified back — with **AI risk
+  triage** and outcome-based **case insights**.
+- 📹 **Video visits** (in-app telehealth), 🧪 **lab results** with AI
+  plain-language explanations, 🏥 **Find Care** hospital/doctor directory, and
+  a 🎓 **Learning Hub** with role-based courses and certificates.
+- 🥽 **VR rehabilitation**, six **specialized care modules**, a full
+  hands-free/screen-reader **accessibility** suite, 🇦🇪 **UAE PASS** sign-in
+  (simulated), **Security & Privacy** with role-based access control, dark
+  mode, and live charts.
+
+> **UML design docs:** see [`docs/DESIGN.md`](docs/DESIGN.md) for the use-case
+> diagram, sequence diagrams, context diagram, and state machines.
 
 ## 🌐 Live demo
 
@@ -30,11 +47,12 @@ Demo accounts (password `demo1234` for all):
 | 👨‍👩‍👧 Primary Carer | `care@example.com` | Pre-linked to Sara with all permission scopes |
 | 👨‍⚕️ Provider | `doctor@example.com` | Sees the whole panel, risk-ranked |
 
-The login page also has **one-click demo chips** — tap "Continue as
-Patient/Primary Carer/Provider" and you're in, no typing. Every patient ships
-with **three weeks of seeded history** (symptoms, dose logs, rehab sessions)
-so trends, risk scores, and case insights show real trajectories out of the
-box.
+The login page shows the email form (pre-filled with Sara's demo credentials)
+plus a **🇦🇪 Sign in with UAE PASS** button (simulated for the demo) and the
+full demo-account list. Every patient ships with **three weeks of seeded
+history** (symptoms, dose logs, rehab sessions, lab results, body-map
+assessments, a video visit) so trends, risk scores, and case insights show real
+trajectories out of the box.
 
 > The backend is on Render's free tier and sleeps when idle — the first request
 > after a nap takes ~30s, then it's fast. AI chat is limited to ~5
@@ -459,26 +477,30 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 Optional, **privacy-first** on-device safety monitoring for high-risk patients
 (elderly, post-surgery, stroke recovery, dementia, people living alone).
 
-- **On-device detection.** With the patient's explicit consent, the browser
-  camera analyzes motion in real time using frame-to-frame differencing —
+- **On-device pose AI.** With the patient's explicit consent, the browser
+  camera runs **MediaPipe pose detection** in real time (WASM, GPU-accelerated,
+  the same engine as Face Control). It tracks the body's actual skeleton —
   **frames never leave the device**, and video is never continuously recorded.
-  A sharp motion spike followed by sustained near-stillness is the fall
-  signature the detector watches for.
-- **Emergency workflow.** On detection, a full-screen popup interrupts
-  everything: *"Possible emergency detected — are you okay?"* with a 30-second
-  countdown and **🟢 I'm OK / 🔴 I Need Help** buttons.
-- **Automatic escalation.** *I'm OK* records a false alarm and keeps
-  monitoring. *I Need Help* — or **no response before the countdown ends** —
-  automatically alerts the patient's linked Primary Carer(s) through the same
-  safety-notification pipeline as the rest of the app (the alert names the
-  patient, the event, and the time).
-- **Dashboard & timeline.** Live monitoring status (🟢 active / ⚪ disabled),
-  current activity and motion level, a live activity timeline, and running
-  emergency / false-alarm counts. A **"Test emergency detection"** button
-  demonstrates the whole workflow without needing a real fall.
-- **Off by default.** Monitoring only starts when the patient turns it on;
-  the camera is never activated secretly; only emergency events are saved.
-  Future-ready for stroke-posture, seizure, choking, and CPR detection.
+- **See what the AI sees.** The detected **skeleton is drawn over the video**
+  (cyan limbs, magenta joints), and a live **"AI observations" feed** logs what
+  it perceives as it changes: *no person in view, standing still,
+  sitting/resting, moving actively, sudden downward movement, lying/horizontal,
+  fallen.* Live posture ("Upright / Leaning / Lying") and detection-confidence
+  are shown alongside.
+- **Posture-based fall detection.** A sustained **horizontal torso** (person on
+  the ground for ~1s) or a **rapid drop into low posture** triggers the alarm —
+  far more reliable than raw motion. Demoable by crouching low or lying down in
+  view. Falls back to motion-only detection if the pose model can't load.
+- **Emergency workflow.** A full-screen popup interrupts everything: *"Possible
+  emergency detected — are you okay?"* with a 30-second countdown and **🟢 I'm
+  OK / 🔴 I Need Help** buttons. *I'm OK* records a false alarm; *I Need Help*
+  or **no response** auto-alerts the linked Primary Carer(s) through the same
+  safety-notification pipeline (event, patient, time). A **"Test emergency
+  detection"** button demonstrates the full workflow instantly.
+- **Off by default.** Monitoring only starts when the patient turns it on; the
+  camera is never activated secretly; only emergency *events* (never footage)
+  are saved. Future-ready for stroke-posture, seizure, choking, and CPR
+  detection.
 
 ### Security & Privacy
 
@@ -514,27 +536,33 @@ backend/
     memory.py          Conversation history helpers
   agents/             orchestrator + safety + vision + 6 specialists
   services/           medication / appointment / patient / notification / rehab / risk-triage / escalation logic
-  api/                chat (text + image), patient, caregiver, doctor, appointment, analytics, rehab, care
-  seed.py             Demo users + 3 weeks of backdated history (symptoms, doses, rehab)
+  api/                chat (text+image), patient, caregiver, doctor, appointment,
+                       analytics, rehab, care, labs, body-map, monitoring
+  seed.py             Demo users + 3 weeks of history (symptoms, doses, rehab,
+                       labs, body-map assessments, a scheduled video visit)
   data/               sample_patients.json
 
 frontend/
   src/
     pages/            Login, Register, Home, Chat, PatientDashboard, Appointments,
-                       Medications, Analytics, SpecializedCare, CareModule, Rehab,
+                       Medications, Labs, BodyMap, Monitoring, FindCare, Learning,
+                       Analytics, SpecializedCare, CareModule, Rehab, Privacy,
                        CaregiverDashboard, DoctorDashboard, Accessibility, NotFound
-    components/        Layout, Sidebar, TopBar, AccessibilityBar, FaceControl,
-                       SpeechAnnouncer, RehabSkeleton, BreathingExercise, MemoryGame,
-                       CareTools (vitals/checklist/growth/timeline/reminder),
-                       Modal, Skeleton, ProgressRing, AnimatedCounter,
-                       AgentStatusBoard, Markdown, Table, MiniCalendar, OfflineNotice, ui
+    components/        Layout, ErrorBoundary, Sidebar, TopBar, AccessibilityBar,
+                       FaceControl, SpeechAnnouncer, BodyFigure (anatomical SVG),
+                       UAEPassLogo, VideoVisit (Jitsi), RehabSkeleton, BreathingExercise,
+                       MemoryGame, CareTools, Modal, Skeleton, ProgressRing,
+                       AnimatedCounter, AgentStatusBoard, Markdown, Table,
+                       MiniCalendar, OfflineNotice, ui
     context/           AuthContext, AccessibilityContext, ThemeContext, ToastContext
     hooks/             useVoice, useFaceControl, useLocalStorage, useNotifications
+    data/              directory.js (Find Care), courses.js (Learning Hub)
     api/client.js      Central fetch wrapper (incl. multipart image upload)
     nav.js             Single source of truth for role-based navigation
 
+docs/DESIGN.md                     UML: use-case, sequence, context, state machines
 render.yaml                        Render blueprint (backend deploy)
-.github/workflows/deploy-pages.yml GitHub Actions → gh-pages → GitHub Pages
+.github/workflows/deploy-pages.yml GitHub Actions → build → deploy-pages (artifact)
 ```
 
 ### Design system
@@ -551,6 +579,21 @@ render.yaml                        Render blueprint (backend deploy)
   theme-colorable and consistent cross-platform.
 - **Charts:** Recharts (area, bar, line, pie) plus a hand-built animated
   `ProgressRing` for circular progress.
+- **Anatomy:** original parametric SVG male/female bodies (front/back) with
+  skin-tone shading and medical contour lines — no external art.
+- **Accessibility:** WCAG-audited — visible focus rings, `prefers-reduced-motion`,
+  skip link, 44px touch targets, theme-aware contrast, screen-reader chart summaries.
+
+### Technology stack
+
+| Layer | Tech |
+|-------|------|
+| **Backend** | FastAPI, SQLAlchemy (SQLite), Pydantic, Uvicorn, passlib+bcrypt |
+| **AI** | Google Gemini (`google-genai` SDK) — chat, vision, summaries, insights |
+| **On-device AI** | MediaPipe Tasks Vision (WASM) — pose (fall detection) + face control; Web Speech API (STT/TTS) |
+| **Frontend** | React, Vite, React Router (HashRouter), Framer Motion, Recharts, Lucide |
+| **Video** | Jitsi Meet (open-source, peer-to-peer) |
+| **Hosting / CI** | GitHub Pages (frontend), Render (backend), GitHub Actions |
 
 ---
 
@@ -722,6 +765,17 @@ the repo, update `base` in `frontend/vite.config.js` to match.
   native companion to the in-browser VR rehab experience, which today is a
   fully interactive (non-Unity) web simulation with an animated SVG skeleton,
   AI-guided rep tracking, and gamified points/levels.
+- **AI Vision Monitoring** uses a real on-device pose model for fall detection;
+  it's a prototype-grade heuristic (sustained horizontal posture / rapid drop),
+  not a certified medical device. The pose model downloads from a CDN on first
+  use (~2–3s) and falls back to motion-only detection if it can't load.
+- **UAE PASS** sign-in is a simulated visual integration (no real national-ID
+  connection); **2FA, audit logs, and encryption-at-rest** are represented at
+  the product/UX level on the Security & Privacy page to show intended posture.
+  **Role-based access control** for Primary Carers is genuinely enforced by the
+  permission-scope model.
+- A global **ErrorBoundary** wraps every page, so a page-level error shows a
+  recoverable card instead of blanking the app.
 
 ## Security
 
