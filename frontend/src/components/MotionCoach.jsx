@@ -82,7 +82,8 @@ export default function MotionCoach({ exerciseId, onRep, running }) {
   const [conf, setConf] = useState(0);
 
   const videoRef = useRef(null);
-  const overlayRef = useRef(null);
+  const skelRef = useRef(null);
+  const flashRef = useRef(0);
   const poseRef = useRef(null);
   const streamRef = useRef(null);
   const rafRef = useRef(null);
@@ -129,59 +130,91 @@ export default function MotionCoach({ exerciseId, onRep, running }) {
     try { analyze(ts); } catch { /* transient */ }
   }
 
+  const W = 480, H = 360;
+  const mx = (p) => (1 - p.x) * W; // mirror horizontally (selfie view)
+  const my = (p) => p.y * H;
+
+  function paintBg(ctx) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#0b1220"); g.addColorStop(1, "#111a2e");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(255,255,255,.06)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H * 0.92); ctx.lineTo(W, H * 0.92); ctx.stroke();
+  }
+
+  function drawSkeleton(ctx, lm, side, activeHi) {
+    // limbs
+    ctx.lineCap = "round"; ctx.lineWidth = 7; ctx.strokeStyle = "#38bdf8";
+    for (const [a, b] of LINKS) {
+      const pa = lm[a], pb = lm[b];
+      if ((pa?.visibility ?? 0) > 0.3 && (pb?.visibility ?? 0) > 0.3) {
+        ctx.beginPath(); ctx.moveTo(mx(pa), my(pa)); ctx.lineTo(mx(pb), my(pb)); ctx.stroke();
+      }
+    }
+    // generic joints
+    ctx.fillStyle = "#e2e8f0";
+    for (const i of [0, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]) {
+      const p = lm[i]; if ((p?.visibility ?? 0) > 0.3) { ctx.beginPath(); ctx.arc(mx(p), my(p), 5, 0, 7); ctx.fill(); }
+    }
+    // tracked joints — highlighted, green when in the active phase
+    const col = activeHi ? "#4ade80" : "#fbbf24";
+    for (const k of cfg.needs) {
+      const p = lm[side[k]];
+      if ((p?.visibility ?? 0) > 0.3) {
+        ctx.shadowColor = col; ctx.shadowBlur = 14;
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(mx(p), my(p), 9, 0, 7); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+    // rep flash
+    const since = performance.now() - flashRef.current;
+    if (since < 350) {
+      ctx.globalAlpha = 1 - since / 350;
+      ctx.fillStyle = "#4ade80"; ctx.font = "bold 48px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText("+1", W / 2, H / 2);
+      ctx.globalAlpha = 1;
+    }
+  }
+
   function analyze(ts) {
     const video = videoRef.current, pose = poseRef.current;
     if (!video || !pose || video.readyState < 2) return;
     const res = pose.detectForVideo(video, ts || performance.now());
-    const overlay = overlayRef.current, octx = overlay?.getContext("2d");
-    if (octx) { overlay.width = video.videoWidth; overlay.height = video.videoHeight; octx.clearRect(0, 0, overlay.width, overlay.height); }
+
+    const canvas = skelRef.current, ctx = canvas?.getContext("2d");
+    if (ctx && canvas.width !== W) { canvas.width = W; canvas.height = H; }
+    if (ctx) paintBg(ctx);
 
     const lm = res?.landmarks?.[0];
-    if (!lm) { setConf(0); setCue("Step into the camera view"); return; }
+    if (!lm) { setConf(0); setCue("Step into view"); return; }
 
     const side = bestSide(lm, cfg.needs);
     const vis = cfg.needs.map((k) => lm[side[k]]?.visibility ?? 0);
     const c = Math.round((vis.reduce((a, b) => a + b, 0) / vis.length) * 100);
     setConf(c);
 
-    if (octx) {
-      octx.strokeStyle = "#22d3ee"; octx.lineWidth = 3;
-      for (const [a, b] of LINKS) {
-        const pa = lm[a], pb = lm[b];
-        if ((pa?.visibility ?? 0) > 0.3 && (pb?.visibility ?? 0) > 0.3) {
-          octx.beginPath(); octx.moveTo(pa.x * overlay.width, pa.y * overlay.height); octx.lineTo(pb.x * overlay.width, pb.y * overlay.height); octx.stroke();
-        }
-      }
-      octx.fillStyle = "#4ade80";
-      for (const k of cfg.needs) { const p = lm[side[k]]; if ((p?.visibility ?? 0) > 0.3) { octx.beginPath(); octx.arc(p.x * overlay.width, p.y * overlay.height, 6, 0, 7); octx.fill(); } }
-    }
-
-    if (c < 30) { setCue("Move so the tracked joints are clearly visible"); return; }
     const v = cfg.signal(lm, side);
-    if (v == null) return;
     const rs = repStateRef.current;
+    let activeHi = false;
 
-    if (!running) { setCue("Press Start, then begin the movement"); return; }
-
-    if (cfg.type === "cycle") {
+    if (c < 30) {
+      setCue("Move into full view");
+    } else if (!running) {
+      setCue("Press Start, then move");
+    } else if (v != null && cfg.type === "cycle") {
       const on = cfg.active(v);
       if (on && !rs.armed) rs.armed = true;
       else if (rs.armed && cfg.rest(v)) { rs.armed = false; countRep(); }
-      setCue(cfg.cue(v, on));
-    } else {
-      // motion type: count rhythmic swings via a rolling band + amplitude.
+      activeHi = on; setCue(cfg.cue(v, on));
+    } else if (v != null) {
       rs.band.push(v); if (rs.band.length > 12) rs.band.shift();
       const lo = Math.min(...rs.band), hi = Math.max(...rs.band);
-      const amp = hi - lo;
-      const mid = (hi + lo) / 2;
-      const dir = v > mid ? 1 : -1;
-      if (amp > 0.06 && dir !== rs.lastPeakDir && rs.lastPeakDir !== 0) {
-        // half swing; count a rep every full swing (two direction changes)
-        if (dir === 1) countRep();
-      }
-      rs.lastPeakDir = dir;
-      setCue(cfg.cue(v, amp > 0.06));
+      const amp = hi - lo, mid = (hi + lo) / 2, dir = v > mid ? 1 : -1;
+      if (amp > 0.06 && dir !== rs.lastPeakDir && rs.lastPeakDir !== 0 && dir === 1) countRep();
+      rs.lastPeakDir = dir; activeHi = amp > 0.06; setCue(cfg.cue(v, activeHi));
     }
+
+    if (ctx) drawSkeleton(ctx, lm, side, activeHi);
   }
 
   function countRep() {
@@ -189,30 +222,33 @@ export default function MotionCoach({ exerciseId, onRep, running }) {
     const now = performance.now();
     if (now - rs.lastRepAt < 500) return; // debounce
     rs.lastRepAt = now;
+    flashRef.current = now;
     onRepRef.current?.();
   }
 
   return (
-    <div>
-      <div className="monitor-stage" style={{ aspectRatio: "4/3" }}>
-        <video ref={videoRef} muted playsInline className="monitor-video" />
-        <canvas ref={overlayRef} className="monitor-overlay-canvas" />
-        {state === "loading" && (
-          <div className="monitor-overlay"><p style={{ fontWeight: 700 }}>Loading motion AI…</p></div>
-        )}
+    <div className="coach">
+      <div className="coach-stage">
+        <canvas ref={skelRef} className="coach-skel" />
+        {/* live camera shrunk into the corner so the skeleton stays clear */}
+        <div className="coach-pip">
+          <video ref={videoRef} muted playsInline />
+          <span className="coach-pip-tag">you</span>
+        </div>
+        {state === "loading" && <div className="coach-msg"><p>Loading motion AI…</p></div>}
         {state === "error" && (
-          <div className="monitor-overlay">
+          <div className="coach-msg">
             <p style={{ fontWeight: 700 }}>Camera unavailable</p>
-            <p className="muted" style={{ fontSize: ".82rem", maxWidth: 300 }}>
-              Allow camera access to use the Motion Coach, or switch off camera mode to use the guided counter.
+            <p style={{ fontSize: ".82rem", opacity: .8, maxWidth: 280 }}>
+              Allow camera access, or switch off Motion Coach to use the guided counter.
             </p>
           </div>
         )}
-      </div>
-      <div className="coach-cue">
-        <span className="coach-cue-dot" style={{ background: conf > 50 ? "var(--success)" : "var(--warning)" }} />
-        {cfg.label} — <strong>{cue}</strong>
-        <span className="muted" style={{ marginLeft: "auto", fontSize: ".78rem" }}>tracking {conf}%</span>
+        <div className="coach-cap">
+          <span className="coach-cue-dot" style={{ background: conf > 50 ? "#4ade80" : "#fbbf24" }} />
+          <strong>{cue}</strong>
+          <span style={{ marginLeft: "auto", opacity: .7 }}>tracking {conf}%</span>
+        </div>
       </div>
     </div>
   );
