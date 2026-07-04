@@ -59,6 +59,30 @@ SPECIALIST_MAP = {
     "Right Heel": ("Orthopedics", "Heel pain is best evaluated by orthopedics."),
     "Left Glute": ("Physiotherapy", "Gluteal/hip muscle pain responds well to physiotherapy."),
     "Right Glute": ("Physiotherapy", "Gluteal/hip muscle pain responds well to physiotherapy."),
+    # Head & face detail
+    "Left Eye": ("General", "Eye symptoms start with a general physician, who can refer to an ophthalmologist."),
+    "Right Eye": ("General", "Eye symptoms start with a general physician, who can refer to an ophthalmologist."),
+    "Nose": ("General", "Nasal complaints start with a general physician (ENT referral if needed)."),
+    "Mouth": ("General", "Mouth or dental symptoms start with a general physician."),
+    "Jaw": ("General", "Jaw pain starts with a general check (dental/ENT referral if needed)."),
+    "Throat": ("General", "Throat symptoms start with a general physician (ENT referral if needed)."),
+    # Trunk detail
+    "Left Ribs": ("General", "Rib pain deserves a general check to rule out chest causes."),
+    "Right Ribs": ("General", "Rib pain deserves a general check to rule out chest causes."),
+    "Stomach": ("General", "Stomach/upper-abdominal symptoms start with a general physician."),
+    "Pelvis": ("General", "Pelvic symptoms start with a general physician."),
+    # Limb detail
+    "Left Wrist": ("Orthopedics", "Wrist pain is best evaluated by orthopedics."),
+    "Right Wrist": ("Orthopedics", "Wrist pain is best evaluated by orthopedics."),
+    "Left Fingers": ("Orthopedics", "Finger/hand complaints go to orthopedics."),
+    "Right Fingers": ("Orthopedics", "Finger/hand complaints go to orthopedics."),
+    "Left Toes": ("Orthopedics", "Toe/foot complaints go to orthopedics."),
+    "Right Toes": ("Orthopedics", "Toe/foot complaints go to orthopedics."),
+    # Back detail
+    "Left Shoulder Blade": ("Physiotherapy", "Shoulder-blade pain responds well to physiotherapy."),
+    "Right Shoulder Blade": ("Physiotherapy", "Shoulder-blade pain responds well to physiotherapy."),
+    "Spine": ("Orthopedics", "Spine pain is best assessed by orthopedics."),
+    "Sacrum": ("Orthopedics", "Tailbone/sacral pain is best assessed by orthopedics."),
 }
 VALID_REGIONS = set(SPECIALIST_MAP)
 
