@@ -214,6 +214,7 @@ class RehabSession(Base):
     reps_target: Mapped[int] = mapped_column(Integer, default=0)
     difficulty: Mapped[str] = mapped_column(String(40), default="easy")
     pain_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    accuracy: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 0-100 motion accuracy
     points: Mapped[int] = mapped_column(Integer, default=0)
     completed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

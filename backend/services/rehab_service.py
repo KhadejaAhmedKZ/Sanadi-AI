@@ -67,13 +67,17 @@ def log_session(
     reps_target: int,
     difficulty: str = "easy",
     pain_level: int | None = None,
+    accuracy: int | None = None,
 ) -> RehabSession:
     base = _DIFFICULTY_POINTS.get(difficulty, 10)
     completion = reps_completed / reps_target if reps_target else 1
-    points = int(base * completion)
+    # A little bonus for high movement accuracy.
+    quality = 1 + (max(0, (accuracy or 0) - 60) / 100) if accuracy is not None else 1
+    points = int(base * completion * quality)
     session = RehabSession(
         patient_id=patient_id,
         exercise=exercise,
+        accuracy=accuracy,
         reps_completed=reps_completed,
         reps_target=reps_target,
         difficulty=difficulty,
@@ -94,6 +98,7 @@ def progress(db: Session, patient_id: int) -> dict:
     ).all()
     total_points = sum(s.points for s in sessions)
     pains = [s.pain_level for s in sessions if s.pain_level is not None]
+    accs = [s.accuracy for s in sessions if s.accuracy is not None]
     # Simple gamified level: every 100 points is a level.
     level = total_points // 100 + 1
     return {
@@ -101,10 +106,12 @@ def progress(db: Session, patient_id: int) -> dict:
         "total_points": total_points,
         "level": level,
         "avg_pain": round(sum(pains) / len(pains), 1) if pains else None,
+        "avg_accuracy": round(sum(accs) / len(accs)) if accs else None,
         "recent": [
             {
                 "exercise": s.exercise,
                 "reps": f"{s.reps_completed}/{s.reps_target}",
+                "accuracy": s.accuracy,
                 "difficulty": s.difficulty,
                 "points": s.points,
                 "pain_level": s.pain_level,

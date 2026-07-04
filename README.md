@@ -104,7 +104,7 @@ sixth dimension.*
 **On-device AI (browser, no data leaves the device)**
 - **MediaPipe Tasks Vision** (Google, WASM) — face-landmark tracking for
   hands-free **Face Control**, and **pose detection** for **AI Vision Emergency
-  Monitoring** (fall detection) and the **Motion Coach** rep-counter.
+  Monitoring** (fall detection) and the **VR Rehab Coach** (side-by-side motion comparison + rep-counting).
 - **Web Speech API** (browser-native) — speech-to-text dictation and
   text-to-speech for the accessibility suite.
 
@@ -408,17 +408,22 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
   estimated calories, mobility %, achievement badges (unlocked from real
   session/level/point thresholds), a confetti completion animation, and
   gamified points/levels that persist across sessions.
-  - **🎥 Motion Coach (real body tracking).** Toggle on the camera and reps
-    are counted from the patient's **actual movement** using on-device
-    MediaPipe pose detection — not a timer. It measures the exercise's joint
-    signal (knee-flexion angle, shoulder-abduction angle, reach distance, or
-    rhythmic ankle/hand movement), counts a rep on each completed cycle with
-    debouncing, draws the tracked skeleton over the live video, and gives
-    real-time form cues ("Bend your knee", "Great — lower slowly") plus a
-    tracking-confidence readout. This verifies the patient is genuinely doing
-    the work; those real reps feed the same session log, points, and the
-    doctor's rehab-progress view. Frames stay on-device; falls back to the
-    guided auto-counter if the camera/pose model is unavailable.
+  - **🎥 Coach Mode — side-by-side virtual physiotherapist.** Toggle the camera
+    on and the screen splits in two: a **virtual coach skeleton** demonstrates
+    the exercise on the left (with the worked joint glowing blue), and the
+    patient's **live tracked skeleton** appears on the right — copy the coach.
+    On-device MediaPipe pose detection compares the patient to the instructor
+    in real time and scores **Accuracy, Range of Motion, Posture, and Overall**
+    on live dials. Joints turn **green when matching, red/amber when off**, with
+    coaching cues ("Bend your knee more", "Raise your arm higher", "Perfect!")
+    and optional AI-physiotherapist **voice guidance**. Reps are counted from
+    real movement (not a timer). Controls: **play/pause the coach, 0.5× / 1× /
+    1.5× speed, and front / side views.** A **session summary** shows reps, time,
+    calories, the accuracy/ROM/posture scores, AI feedback, and the recommended
+    next exercise. Accuracy is saved with the session (`avg_accuracy` + per-session
+    in the rehab-progress API, visible to the patient, doctor, and Primary Carer).
+    Frames stay on-device; falls back to the guided auto-counter if the
+    camera/pose model is unavailable.
 - **Accessibility settings** (own page, plus quick toggles everywhere):
   - Large text / high-contrast display modes.
   - Text-to-speech for AI replies + a standalone TTS tester.

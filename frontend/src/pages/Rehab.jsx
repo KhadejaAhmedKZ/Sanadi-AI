@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 import { StatCard, Loader, ErrorNote } from "../components/ui.jsx";
 import RehabSkeleton from "../components/RehabSkeleton.jsx";
-import MotionCoach from "../components/MotionCoach.jsx";
+import RehabCoach from "../components/RehabCoach.jsx";
 import ProgressRing from "../components/ProgressRing.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 
@@ -78,6 +78,12 @@ export default function Rehab() {
   const [phase, setPhase] = useState(0);
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [coachMode, setCoachMode] = useState(false); // camera rep-counting
+  const [playing, setPlaying] = useState(true);       // instructor playback
+  const [speed, setSpeed] = useState(1);
+  const [coachView, setCoachView] = useState("front"); // front | side
+  const [scores, setScores] = useState({ accuracy: 0, rom: 0, posture: 0, overall: 0 });
+  const scoresRef = useRef(scores);
+  scoresRef.current = scores;
   const timerRef = useRef(null);
   const rafRef = useRef(0);
   const clockRef = useRef(null);
@@ -147,6 +153,7 @@ export default function Rehab() {
 
   async function saveSession(painLevel) {
     if (!selected) return;
+    const acc = coachMode && scoresRef.current.overall > 0 ? scoresRef.current.overall : null;
     try {
       const res = await api.logRehabSession({
         patient_id: patientId,
@@ -155,13 +162,25 @@ export default function Rehab() {
         reps_target: selected.target_reps,
         difficulty,
         pain_level: painLevel,
+        accuracy: acc,
       });
       setDone(false);
       setReps(0);
+      setScores({ accuracy: 0, rom: 0, posture: 0, overall: 0 });
       await loadProgress();
       setError("");
       toast.success(`Session saved — you earned ${res.points} points! 🎉`);
     } catch (e) { setError(e.message); }
+  }
+
+  // AI feedback line for the session summary, based on the coached scores.
+  function summaryFeedback() {
+    const s = scoresRef.current;
+    if (!coachMode || s.overall === 0) return "Great effort completing your session — consistency is what drives recovery.";
+    if (s.overall >= 88) return "Excellent form and range of motion — you're matching the coach beautifully. Keep this up!";
+    if (s.posture < 70) return "Good work! Focus next time on keeping your back straight and steady through each rep.";
+    if (s.rom < 70) return "Nice session. Try to move through the full range — reach the coach's end positions for more benefit.";
+    return "Solid session — your accuracy is improving. A little more control on each rep will push your scores higher.";
   }
 
   if (loading) return <Loader label="Loading VR rehabilitation…" />;
@@ -187,8 +206,9 @@ export default function Rehab() {
         <div style={{ position: "relative", zIndex: 1 }}>
           <span className="badge" style={{ background: "rgba(255,255,255,.18)", color: "#fff" }}>🥽 VR Control Center</span>
           <h1 style={{ margin: "10px 0 6px", fontSize: "2rem" }}>Rehabilitation Session</h1>
-          <p style={{ margin: 0, opacity: .9, maxWidth: 480 }}>
-            Guided physiotherapy with real-time AI rep tracking and a holographic motion coach.
+          <p style={{ margin: 0, opacity: .9, maxWidth: 520 }}>
+            A virtual physiotherapist demonstrates each move on one side while the camera tracks
+            your body on the other — with live accuracy, range-of-motion and posture scoring.
           </p>
           {!running && !done && (
             <motion.button
@@ -229,11 +249,18 @@ export default function Rehab() {
             <ConfettiBurst show={done} />
             <div className="vr-hud">
               <span>🎯 {selected?.name}</span>
-              <span>{coachMode ? "🎥 Motion Coach" : "🎞️ Guided"} · ⚙️ {difficulty}</span>
+              <span>{coachMode ? "🎥 Coach Mode" : "🎞️ Guided"} · ⚙️ {difficulty}</span>
             </div>
             <div className="rehab-skeleton-wrap">
               {coachMode && selected ? (
-                <MotionCoach exerciseId={selected.id} running={running} onRep={addRealRep} />
+                <RehabCoach
+                  exerciseId={selected.id}
+                  running={running && playing}
+                  view={coachView}
+                  speed={speed}
+                  onRep={addRealRep}
+                  onScore={setScores}
+                />
               ) : (
                 <RehabSkeleton exerciseId={selected?.id} bendFactor={phase} running={running} />
               )}
@@ -259,17 +286,54 @@ export default function Rehab() {
             </div>
           </div>
 
+          {done && (
+            <motion.div className="card mt" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <h3 className="card-title">🏁 Session summary — {selected?.name}</h3>
+              <div className="grid cols-3" style={{ gap: 10, marginTop: 6 }}>
+                <StatCard icon="✅" value={`${reps}/${selected?.target_reps}`} label="Reps completed" accent="#22c55e" />
+                <StatCard icon="⏱️" value={formatDuration(sessionSeconds)} label="Time exercised" accent="#0ea5e9" />
+                <StatCard icon="🔥" value={calories} label="Est. calories" accent="#f97316" />
+                {coachMode && scores.overall > 0 && <>
+                  <StatCard icon="🎯" value={`${scores.accuracy}%`} label="Accuracy" accent="#16a34a" />
+                  <StatCard icon="🦿" value={`${scores.rom}%`} label="Range of motion" accent="#06b6d4" />
+                  <StatCard icon="🧍" value={`${scores.posture}%`} label="Posture" accent="#8b5cf6" />
+                </>}
+              </div>
+              <div className="meal-note" style={{ marginTop: 12 }}>
+                <strong>🧠 AI feedback:</strong> {summaryFeedback()}
+              </div>
+              {exercises.length > 1 && (
+                <p className="muted" style={{ fontSize: ".85rem", marginTop: 10 }}>
+                  👉 Recommended next: <strong>{(exercises[(exercises.findIndex((e) => e.id === selected?.id) + 1) % exercises.length] || {}).name}</strong>
+                </p>
+              )}
+            </motion.div>
+          )}
+
           <div className="row wrap mt" style={{ gap: 10 }}>
             <button
               className={"btn sm " + (coachMode ? "" : "secondary")}
               onClick={() => setCoachMode((m) => !m)}
               disabled={running}
-              title="Use your camera to count real reps by tracking your body"
+              title="Watch a virtual coach and copy the movement — the camera tracks your body and scores your form"
             >
-              {coachMode ? "🎥 Motion Coach: ON" : "🎥 Motion Coach: OFF"}
+              {coachMode ? "🎥 Coach Mode: ON" : "🎥 Coach Mode: OFF"}
             </button>
             {!running && !done && <button className="btn lg" onClick={start}>▶ Start session</button>}
             {running && <button className="btn danger lg" onClick={stop}>⏸ Pause</button>}
+            {coachMode && running && (
+              <div className="row" style={{ gap: 6 }}>
+                <button className="btn secondary sm" onClick={() => setPlaying((p) => !p)} title="Play / pause the coach">
+                  {playing ? "⏸ Coach" : "▶ Coach"}
+                </button>
+                {[0.5, 1, 1.5].map((sp) => (
+                  <button key={sp} className={"btn sm " + (speed === sp ? "" : "secondary")} onClick={() => setSpeed(sp)}>{sp}×</button>
+                ))}
+                {["front", "side"].map((v) => (
+                  <button key={v} className={"btn sm " + (coachView === v ? "" : "secondary")} onClick={() => setCoachView(v)}>{v}</button>
+                ))}
+              </div>
+            )}
             {done && (
               <>
                 <span className="muted" style={{ alignSelf: "center" }}>How much pain? </span>
@@ -354,7 +418,7 @@ export default function Rehab() {
                 <div className="dot">🥽</div>
                 <div>
                   <div style={{ fontWeight: 700 }}>{s.exercise}</div>
-                  <div className="muted" style={{ fontSize: ".8rem" }}>{s.reps} reps · {s.difficulty}</div>
+                  <div className="muted" style={{ fontSize: ".8rem" }}>{s.reps} reps · {s.difficulty}{s.accuracy != null ? ` · 🎯 ${s.accuracy}%` : ""}</div>
                 </div>
               </div>
               <span className="badge green">+{s.points} pts</span>

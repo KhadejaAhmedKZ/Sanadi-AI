@@ -16,6 +16,7 @@ class SessionLog(BaseModel):
     reps_target: int = Field(gt=0, le=1000)
     difficulty: str = "easy"
     pain_level: int | None = Field(default=None, ge=0, le=10)
+    accuracy: int | None = Field(default=None, ge=0, le=100)
 
 
 @router.get("/exercises")
@@ -35,6 +36,7 @@ def log_session(payload: SessionLog, db: Session = Depends(get_db)):
         reps_target=payload.reps_target,
         difficulty=payload.difficulty,
         pain_level=payload.pain_level,
+        accuracy=payload.accuracy,
     )
     return {"id": s.id, "points": s.points, "completed_at": s.completed_at}
 
