@@ -187,7 +187,7 @@ export default function RehabCoach({ exerciseId, running, view, speed, onRep, on
     cfg.animate(instr, phaseRef.current);
     const iC = instrRef.current, iCtx = iC?.getContext("2d");
     if (iCtx) {
-      const W = 300, H = 340; if (iC.width !== W) { iC.width = W; iC.height = H; }
+      const W = 360, H = 420; if (iC.width !== W) { iC.width = W; iC.height = H; }
       paintBg(iCtx, W, H, "#0e1a2e");
       drawSkeleton(iCtx, W, H, (i) => (instr[i] ? project([instr[i].x, instr[i].y], view) : null), { limb: "#38bdf8", highlight: cfg.highlight, hlColor: "#3b82f6" });
     }
@@ -203,7 +203,7 @@ export default function RehabCoach({ exerciseId, running, view, speed, onRep, on
       lm = res?.landmarks?.[0] || null;
     }
     const pC = patRef.current, pCtx = pC?.getContext("2d");
-    if (pCtx) { const W = 300, H = 340; if (pC.width !== W) { pC.width = W; pC.height = H; } paintBg(pCtx, W, H, "#0b1220"); }
+    if (pCtx) { const W = 360, H = 420; if (pC.width !== W) { pC.width = W; pC.height = H; } paintBg(pCtx, W, H, "#0b1220"); }
 
     if (lm) {
       side = bestSide(lm, cfg);
@@ -240,7 +240,7 @@ export default function RehabCoach({ exerciseId, running, view, speed, onRep, on
 
       // draw patient skeleton, joints tinted by match
       const jc = matchOk ? "#4ade80" : "#f87171";
-      drawSkeleton(pCtx, 300, 340, (i) => (lm[i] && (lm[i].visibility ?? 0) > 0.3 ? [1 - lm[i].x, lm[i].y] : null), { limb: matchOk ? "#22c55e" : "#fb923c", joint: "#e2e8f0", highlight: [side.shoulder === 12 ? 12 : 11], hlColor: jc });
+      drawSkeleton(pCtx, 360, 420, (i) => (lm[i] && (lm[i].visibility ?? 0) > 0.3 ? [1 - lm[i].x, lm[i].y] : null), { limb: matchOk ? "#22c55e" : "#fb923c", joint: "#e2e8f0", highlight: [side.shoulder === 12 ? 12 : 11], hlColor: jc });
 
       // rep detection + cue
       if (running && conf >= 30 && patientSig != null) {
@@ -279,22 +279,36 @@ export default function RehabCoach({ exerciseId, running, view, speed, onRep, on
   }
 
   const dials = [
-    { label: "Accuracy", v: scores.accuracy, c: "#22c55e" },
-    { label: "Range of motion", v: scores.rom, c: "#06b6d4" },
-    { label: "Posture", v: scores.posture, c: "#8b5cf6" },
-    { label: "Overall", v: scores.overall, c: "#2563eb" },
+    { label: "Accuracy", icon: "🎯", v: scores.accuracy, c: "#22c55e" },
+    { label: "Range", icon: "🦿", v: scores.rom, c: "#06b6d4" },
+    { label: "Posture", icon: "🧍", v: scores.posture, c: "#8b5cf6" },
+    { label: "Overall", icon: "⭐", v: scores.overall, c: "#2563eb" },
   ];
 
   return (
     <div className="rehab-coach">
       <div className="rehab-duo">
-        <div className="rehab-pane">
-          <div className="rehab-pane-tag coach">👩‍⚕️ Virtual coach</div>
+        {/* STEP 1 — the coach demonstrates */}
+        <div className="rehab-pane coach">
+          <div className="rehab-pane-head">
+            <span className="rehab-step">1</span>
+            <div>
+              <div className="rehab-step-title">Watch the coach</div>
+              <div className="rehab-step-sub">{cfg.title}</div>
+            </div>
+          </div>
           <canvas ref={instrRef} className="rehab-canvas" />
         </div>
-        <div className="rehab-vs">⇄</div>
-        <div className="rehab-pane">
-          <div className="rehab-pane-tag you">🧍 You (live)</div>
+
+        {/* STEP 2 — you copy it */}
+        <div className="rehab-pane you">
+          <div className="rehab-pane-head">
+            <span className="rehab-step green">2</span>
+            <div>
+              <div className="rehab-step-title">Copy the movement</div>
+              <div className="rehab-step-sub">Match the coach with your body</div>
+            </div>
+          </div>
           <canvas ref={patRef} className="rehab-canvas" />
           <video ref={videoRef} muted playsInline style={{ display: "none" }} />
           {state === "loading" && <div className="rehab-pane-msg">Loading motion AI…</div>}
@@ -302,16 +316,22 @@ export default function RehabCoach({ exerciseId, running, view, speed, onRep, on
         </div>
       </div>
 
-      <div className="rehab-cue-bar">
-        <span className="coach-cue-dot" style={{ background: scores.accuracy > 70 ? "#4ade80" : "#fbbf24" }} />
-        <strong>{cfg.title}</strong> — {cue}
+      {/* STEP 3 — AI feedback, clearly separated */}
+      <div className="rehab-feedback">
+        <span className="rehab-feedback-icon">💬</span>
+        <div style={{ flex: 1 }}>
+          <div className="rehab-feedback-label">AI feedback</div>
+          <div className="rehab-feedback-text">{cue}</div>
+        </div>
+        <span className="coach-cue-dot" style={{ width: 12, height: 12, background: scores.accuracy > 70 ? "#4ade80" : "#fbbf24" }} />
       </div>
 
-      <div className="rehab-dials">
+      {/* compact supporting stats */}
+      <div className="rehab-stats">
         {dials.map((d) => (
-          <div key={d.label} className="rehab-dial">
-            <div className="rehab-dial-track"><div className="rehab-dial-fill" style={{ width: `${d.v}%`, background: d.c }} /></div>
-            <div className="rehab-dial-label"><span>{d.label}</span><b>{d.v}%</b></div>
+          <div key={d.label} className="rehab-stat">
+            <div className="rehab-stat-top"><span>{d.icon} {d.label}</span><b>{d.v}%</b></div>
+            <div className="rehab-stat-bar"><div style={{ width: `${d.v}%`, background: d.c }} /></div>
           </div>
         ))}
       </div>

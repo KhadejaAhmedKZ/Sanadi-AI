@@ -251,7 +251,7 @@ export default function Rehab() {
               <span>🎯 {selected?.name}</span>
               <span>{coachMode ? "🎥 Coach Mode" : "🎞️ Guided"} · ⚙️ {difficulty}</span>
             </div>
-            <div className="rehab-skeleton-wrap">
+            <div className={"rehab-skeleton-wrap" + (coachMode ? " coach" : "")}>
               {coachMode && selected ? (
                 <RehabCoach
                   exerciseId={selected.id}
@@ -275,14 +275,17 @@ export default function Rehab() {
                 </motion.div>
               )}
             </div>
-            <div className="rep-counter">{reps}<span style={{ fontSize: "1.2rem" }}>/{selected?.target_reps}</span></div>
-            <div style={{ width: "70%" }}>
+            <div className="rep-block">
+              <span className="rep-label">{coachMode ? "3️⃣ Reps completed — keep going" : "Reps completed"}</span>
+              <div className="rep-counter">{reps}<span>/{selected?.target_reps}</span></div>
+            </div>
+            <div style={{ width: "min(560px, 82%)" }}>
               <div className="progress-track" style={{ background: "rgba(255,255,255,.25)" }}>
                 <motion.div className="progress-fill" animate={{ width: `${pct}%` }} transition={{ duration: 0.3 }} />
               </div>
             </div>
-            <div style={{ marginTop: 12, opacity: .9 }}>
-              {done ? "Great job — session complete!" : running ? "Follow the on-screen movement…" : "Press Start when you're ready"}
+            <div style={{ marginTop: 12, opacity: .9, fontSize: ".95rem" }}>
+              {done ? "🎉 Great job — session complete!" : running ? "Follow the coach and copy the movement…" : "Press Start when you're ready"}
             </div>
           </div>
 
