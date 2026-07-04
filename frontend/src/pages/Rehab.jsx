@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 import { StatCard, Loader, ErrorNote } from "../components/ui.jsx";
 import RehabSkeleton from "../components/RehabSkeleton.jsx";
+import MotionCoach from "../components/MotionCoach.jsx";
 import ProgressRing from "../components/ProgressRing.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 
@@ -76,6 +77,7 @@ export default function Rehab() {
   const [done, setDone] = useState(false);
   const [phase, setPhase] = useState(0);
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [coachMode, setCoachMode] = useState(false); // camera rep-counting
   const timerRef = useRef(null);
   const rafRef = useRef(0);
   const clockRef = useRef(null);
@@ -91,8 +93,9 @@ export default function Rehab() {
       .finally(() => setLoading(false));
   }, [patientId]);
 
+  // Auto-counter (guided mode). In Motion Coach mode reps come from the camera.
   useEffect(() => {
-    if (!running || !selected) return;
+    if (!running || !selected || coachMode) return;
     const speed = difficulty === "hard" ? 1600 : difficulty === "medium" ? 1200 : 900;
     timerRef.current = setInterval(() => {
       setReps((r) => {
@@ -106,7 +109,16 @@ export default function Rehab() {
       });
     }, speed);
     return () => clearInterval(timerRef.current);
-  }, [running, selected, difficulty]);
+  }, [running, selected, difficulty, coachMode]);
+
+  // A real rep detected by the camera (Motion Coach mode).
+  function addRealRep() {
+    setReps((r) => {
+      if (!selected || r >= selected.target_reps) return r;
+      if (r + 1 >= selected.target_reps) { setRunning(false); setDone(true); return selected.target_reps; }
+      return r + 1;
+    });
+  }
 
   useEffect(() => {
     if (!running || !selected) { setPhase(0); return; }
@@ -217,10 +229,14 @@ export default function Rehab() {
             <ConfettiBurst show={done} />
             <div className="vr-hud">
               <span>🎯 {selected?.name}</span>
-              <span>⚙️ {difficulty}</span>
+              <span>{coachMode ? "🎥 Motion Coach" : "🎞️ Guided"} · ⚙️ {difficulty}</span>
             </div>
             <div className="rehab-skeleton-wrap">
-              <RehabSkeleton exerciseId={selected?.id} bendFactor={phase} running={running} />
+              {coachMode && selected ? (
+                <MotionCoach exerciseId={selected.id} running={running} onRep={addRealRep} />
+              ) : (
+                <RehabSkeleton exerciseId={selected?.id} bendFactor={phase} running={running} />
+              )}
               {done && (
                 <motion.div
                   className="rehab-done-badge"
@@ -244,6 +260,14 @@ export default function Rehab() {
           </div>
 
           <div className="row wrap mt" style={{ gap: 10 }}>
+            <button
+              className={"btn sm " + (coachMode ? "" : "secondary")}
+              onClick={() => setCoachMode((m) => !m)}
+              disabled={running}
+              title="Use your camera to count real reps by tracking your body"
+            >
+              {coachMode ? "🎥 Motion Coach: ON" : "🎥 Motion Coach: OFF"}
+            </button>
             {!running && !done && <button className="btn lg" onClick={start}>▶ Start session</button>}
             {running && <button className="btn danger lg" onClick={stop}>⏸ Pause</button>}
             {done && (

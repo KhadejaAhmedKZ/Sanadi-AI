@@ -374,6 +374,17 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
   estimated calories, mobility %, achievement badges (unlocked from real
   session/level/point thresholds), a confetti completion animation, and
   gamified points/levels that persist across sessions.
+  - **🎥 Motion Coach (real body tracking).** Toggle on the camera and reps
+    are counted from the patient's **actual movement** using on-device
+    MediaPipe pose detection — not a timer. It measures the exercise's joint
+    signal (knee-flexion angle, shoulder-abduction angle, reach distance, or
+    rhythmic ankle/hand movement), counts a rep on each completed cycle with
+    debouncing, draws the tracked skeleton over the live video, and gives
+    real-time form cues ("Bend your knee", "Great — lower slowly") plus a
+    tracking-confidence readout. This verifies the patient is genuinely doing
+    the work; those real reps feed the same session log, points, and the
+    doctor's rehab-progress view. Frames stay on-device; falls back to the
+    guided auto-counter if the camera/pose model is unavailable.
 - **Accessibility settings** (own page, plus quick toggles everywhere):
   - Large text / high-contrast display modes.
   - Text-to-speech for AI replies + a standalone TTS tester.
