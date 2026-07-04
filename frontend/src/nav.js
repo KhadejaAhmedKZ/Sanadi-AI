@@ -8,6 +8,8 @@ import {
   Home,
   MessageCircleMore,
   PersonStanding,
+  ShieldAlert,
+  Lock,
   ClipboardList,
   CalendarDays,
   Pill,
@@ -30,6 +32,7 @@ export const NAV = {
         { to: "/", icon: Home, label: "Home", end: true },
         { to: "/chat", icon: MessageCircleMore, label: "AI Assistant" },
         { to: "/body-map", icon: PersonStanding, label: "Body Map" },
+        { to: "/monitoring", icon: ShieldAlert, label: "Safety Monitor" },
         { to: "/dashboard", icon: ClipboardList, label: "My Health" },
         { to: "/appointments", icon: CalendarDays, label: "Appointments" },
         { to: "/medications", icon: Pill, label: "Medications" },
@@ -77,5 +80,6 @@ export function flatNav(role) {
   const groups = NAV[role] || NAV.patient;
   const items = groups.flatMap((g) => g.items);
   items.push({ to: "/accessibility", icon: Accessibility, label: "Accessibility" });
+  items.push({ to: "/privacy", icon: Lock, label: "Security & Privacy" });
   return items;
 }

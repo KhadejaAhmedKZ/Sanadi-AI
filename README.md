@@ -299,6 +299,16 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 - **🧪 Lab Results** — results added by the care team, shown with reference
   ranges and normal/high/low badges, plus an **"Explain my results"** AI
   card that translates them to plain language without diagnosing.
+- **🧍 Body Map** — an interactive anatomical figure (semi-realistic male &
+  female bodies, front and back) with **55+ selectable regions** across the
+  head, neck, chest/heart, back, arms, hands, abdomen, hips, groin, and legs.
+  Tap a region to log intensity (0–10, medical color scale incl. purple for
+  chronic), pain type, onset, aggravating factors, and swelling/redness/injury
+  flags. Each assessment writes to the shared symptom log (feeding triage,
+  trends, and the Primary Carer overview), runs the offline emergency net
+  (severe chest/heart pain, 9–10/10, loss-of-movement → caregiver alert), and
+  returns a rule-based specialist recommendation with one-tap Find-Care and
+  booking handoffs, plus an on-demand AI preliminary assessment.
 - **🏥 Find Care** — a directory of top-rated hospitals and doctors
   (fictional demo data, labeled as such): search, filter by specialty, sort
   by rating/distance/wait time, and one tap pre-fills the booking form with
@@ -444,6 +454,51 @@ Orchestrator ──► Safety screen ──(emergency?)──► stop + emergenc
 
 ---
 
+### AI Vision Emergency Monitoring (flagship)
+
+Optional, **privacy-first** on-device safety monitoring for high-risk patients
+(elderly, post-surgery, stroke recovery, dementia, people living alone).
+
+- **On-device detection.** With the patient's explicit consent, the browser
+  camera analyzes motion in real time using frame-to-frame differencing —
+  **frames never leave the device**, and video is never continuously recorded.
+  A sharp motion spike followed by sustained near-stillness is the fall
+  signature the detector watches for.
+- **Emergency workflow.** On detection, a full-screen popup interrupts
+  everything: *"Possible emergency detected — are you okay?"* with a 30-second
+  countdown and **🟢 I'm OK / 🔴 I Need Help** buttons.
+- **Automatic escalation.** *I'm OK* records a false alarm and keeps
+  monitoring. *I Need Help* — or **no response before the countdown ends** —
+  automatically alerts the patient's linked Primary Carer(s) through the same
+  safety-notification pipeline as the rest of the app (the alert names the
+  patient, the event, and the time).
+- **Dashboard & timeline.** Live monitoring status (🟢 active / ⚪ disabled),
+  current activity and motion level, a live activity timeline, and running
+  emergency / false-alarm counts. A **"Test emergency detection"** button
+  demonstrates the whole workflow without needing a real fall.
+- **Off by default.** Monitoring only starts when the patient turns it on;
+  the camera is never activated secretly; only emergency events are saved.
+  Future-ready for stroke-posture, seizure, choking, and CPR detection.
+
+### Security & Privacy
+
+A dedicated **Security & Privacy** page (all roles) explains the platform's
+data protections in plain language, with badges for end-to-end encryption,
+two-factor authentication, AI privacy protection, role-based access control,
+patient consent, encrypted records, secure storage, and audit logs. It is
+explicit about what is implemented versus represented at the product/UX level
+for this prototype.
+
+### Role-Based Access Control
+
+- **Patient** — full access to everything about themselves.
+- **Primary Carer** — only the scopes the patient granted (`medications`,
+  `appointments`, `symptoms`, `safety`); never private AI chats or hidden
+  records. The Primary Carer's AI assistant is grounded in exactly that scoped
+  data, so it cannot reveal what the portal wouldn't.
+- **Doctor** — clinical history: body assessments, pain history, labs,
+  clinical notes, AI summaries, treatment plans, and emergency events.
+
 ## 3. Architecture & project layout
 
 ```
@@ -451,7 +506,7 @@ backend/
   main.py            FastAPI app + router registration, startup auto-seed
   config.py          Settings (.env) — CORS, SINGLE_CALL_MODE, etc.
   database.py        SQLAlchemy engine/session
-  models.py          Users, meds, appointments, symptoms, rehab sessions, messages, care links, escalations
+  models.py          Users, meds, appointments, symptoms, rehab sessions, messages, care links, escalations, lab results, body assessments, emergency events
   schemas.py         Pydantic request/response models
   ai/
     gemini_client.py   generate / generate_json / analyze_image (multimodal)
@@ -543,7 +598,10 @@ Run the backend alongside it.
 | `/appointments` | patient | Book / cancel appointments |
 | `/medications` | patient | Add meds, log doses taken/missed |
 | `/labs` | patient | Lab results with reference ranges + AI plain-language explanation |
+| `/body-map` | patient | Interactive 55+ region anatomical pain assessment |
+| `/monitoring` | patient | AI Vision Emergency Monitoring (on-device fall detection) |
 | `/find-care` | patient | Hospital & doctor directory (fictional) → prefilled booking |
+| `/privacy` | all | Security & Privacy — protections, badges, RBAC |
 | `/learn` | all | Learning Hub — role-based courses with certificates |
 | `/analytics` | patient | Adherence + pain-trend charts (lazy-loaded) |
 | `/care` | all | Specialized care modules directory (lazy-loaded) |
@@ -602,6 +660,8 @@ curl -s localhost:8000/rehab/patients/1/progress
 | GET  | `/analytics/patients/{id}`, `/analytics/population` | Patient insights (incl. dated pain + dose series for trend charts) / population |
 | GET  | `/rehab/exercises`, POST `/rehab/sessions`, GET `/rehab/patients/{id}/progress` | VR exercise catalog / log a session / points & level |
 | GET  | `/labs/patients/{id}`, POST `/labs`, GET `/labs/patients/{id}/explain` | View / add (provider-only) / AI-explain lab results |
+| POST | `/body/assessments`, GET `/body/patients/{id}/assessments`, POST `/body/assessments/{id}/analyze` | Body-map: log a region, list, AI preliminary assessment |
+| POST | `/monitoring/events`, POST `/monitoring/events/{id}/respond`, GET `/monitoring/patients/{id}/events` | Emergency monitoring: record event, respond (OK/help/auto-escalate → alerts Primary Carer), history |
 | GET  | `/care/modules` | Specialized care module metadata |
 | GET  | `/health` | Liveness + whether Gemini is online |
 

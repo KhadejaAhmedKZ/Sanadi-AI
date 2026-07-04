@@ -43,15 +43,31 @@ SPECIALIST_MAP = {
     "Right Thigh": ("Physiotherapy", "Thigh/muscle pain responds well to physiotherapy."),
     "Left Calf": ("General", "Calf pain deserves a general check first (rule out circulation issues)."),
     "Right Calf": ("General", "Calf pain deserves a general check first (rule out circulation issues)."),
+    "Face": ("General", "Facial pain or swelling starts with a general physician."),
+    "Heart": ("Cardiology", "Heart-area symptoms should be reviewed by a cardiologist."),
+    "Lower Abdomen": ("General", "Lower-abdominal complaints start with a general physician."),
+    "Groin": ("General", "Groin pain deserves a general check first."),
+    "Left Elbow": ("Orthopedics", "Elbow pain is usually musculoskeletal."),
+    "Right Elbow": ("Orthopedics", "Elbow pain is usually musculoskeletal."),
+    "Left Forearm": ("Orthopedics", "Forearm pain is usually musculoskeletal."),
+    "Right Forearm": ("Orthopedics", "Forearm pain is usually musculoskeletal."),
+    "Left Shin": ("Orthopedics", "Shin pain is best evaluated by orthopedics."),
+    "Right Shin": ("Orthopedics", "Shin pain is best evaluated by orthopedics."),
+    "Left Foot": ("Orthopedics", "Foot complaints go to orthopedics."),
+    "Right Foot": ("Orthopedics", "Foot complaints go to orthopedics."),
+    "Left Heel": ("Orthopedics", "Heel pain is best evaluated by orthopedics."),
+    "Right Heel": ("Orthopedics", "Heel pain is best evaluated by orthopedics."),
+    "Left Glute": ("Physiotherapy", "Gluteal/hip muscle pain responds well to physiotherapy."),
+    "Right Glute": ("Physiotherapy", "Gluteal/hip muscle pain responds well to physiotherapy."),
 }
 VALID_REGIONS = set(SPECIALIST_MAP)
 
 # Offline emergency rules — zero AI calls, mirror the chat safety net.
 def _emergency_check(region: str, intensity: int, notes: str) -> str | None:
     low = (notes or "").lower()
-    if region == "Chest" and intensity >= 6:
+    if region in ("Chest", "Heart") and intensity >= 6:
         return (
-            "🚨 Severe chest pain can be an emergency. Please call your local "
+            "🚨 Severe chest or heart-area pain can be an emergency. Please call your local "
             "emergency number or go to the nearest emergency department NOW — "
             "do not wait for an appointment."
         )

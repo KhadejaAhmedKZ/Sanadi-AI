@@ -3,40 +3,64 @@
 // by the latest reported intensity. Original vector illustration.
 
 export const FRONT_REGIONS = [
-  { region: "Head", cx: 110, cy: 38 },
-  { region: "Neck", cx: 110, cy: 66 },
-  { region: "Right Shoulder", cx: 78, cy: 88 },
-  { region: "Left Shoulder", cx: 142, cy: 88 },
-  { region: "Chest", cx: 110, cy: 112 },
-  { region: "Right Arm", cx: 60, cy: 150 },
-  { region: "Left Arm", cx: 160, cy: 150 },
-  { region: "Abdomen", cx: 110, cy: 168 },
-  { region: "Right Hand", cx: 47, cy: 236 },
-  { region: "Left Hand", cx: 173, cy: 236 },
-  { region: "Right Hip", cx: 94, cy: 214 },
-  { region: "Left Hip", cx: 126, cy: 214 },
+  { region: "Head", cx: 110, cy: 28 },
+  { region: "Face", cx: 110, cy: 45 },
+  { region: "Neck", cx: 110, cy: 65 },
+  { region: "Right Shoulder", cx: 78, cy: 87 },
+  { region: "Left Shoulder", cx: 142, cy: 87 },
+  { region: "Chest", cx: 103, cy: 105 },
+  { region: "Heart", cx: 123, cy: 116 },
+  { region: "Right Arm", cx: 61, cy: 122 },
+  { region: "Left Arm", cx: 159, cy: 122 },
+  { region: "Abdomen", cx: 110, cy: 148 },
+  { region: "Right Elbow", cx: 56, cy: 155 },
+  { region: "Left Elbow", cx: 164, cy: 155 },
+  { region: "Lower Abdomen", cx: 110, cy: 180 },
+  { region: "Right Forearm", cx: 51, cy: 188 },
+  { region: "Left Forearm", cx: 169, cy: 188 },
+  { region: "Right Hip", cx: 93, cy: 210 },
+  { region: "Left Hip", cx: 127, cy: 210 },
+  { region: "Groin", cx: 110, cy: 223 },
+  { region: "Right Hand", cx: 47, cy: 238 },
+  { region: "Left Hand", cx: 173, cy: 238 },
+  { region: "Right Thigh", cx: 97, cy: 265 },
+  { region: "Left Thigh", cx: 123, cy: 265 },
   { region: "Right Knee", cx: 98, cy: 310 },
   { region: "Left Knee", cx: 122, cy: 310 },
-  { region: "Right Ankle", cx: 99, cy: 392 },
-  { region: "Left Ankle", cx: 121, cy: 392 },
+  { region: "Right Shin", cx: 100, cy: 350 },
+  { region: "Left Shin", cx: 120, cy: 350 },
+  { region: "Right Ankle", cx: 100, cy: 386 },
+  { region: "Left Ankle", cx: 120, cy: 386 },
+  { region: "Right Foot", cx: 93, cy: 408 },
+  { region: "Left Foot", cx: 127, cy: 408 },
 ];
 
 export const BACK_REGIONS = [
-  { region: "Head", cx: 110, cy: 38 },
-  { region: "Neck", cx: 110, cy: 66 },
-  { region: "Left Shoulder", cx: 78, cy: 88 },
-  { region: "Right Shoulder", cx: 142, cy: 88 },
-  { region: "Upper Back", cx: 110, cy: 106 },
-  { region: "Left Arm", cx: 60, cy: 150 },
-  { region: "Right Arm", cx: 160, cy: 150 },
-  { region: "Mid Back", cx: 110, cy: 146 },
-  { region: "Lower Back", cx: 110, cy: 186 },
-  { region: "Left Hip", cx: 94, cy: 218 },
-  { region: "Right Hip", cx: 126, cy: 218 },
-  { region: "Left Thigh", cx: 98, cy: 268 },
-  { region: "Right Thigh", cx: 122, cy: 268 },
-  { region: "Left Calf", cx: 99, cy: 348 },
-  { region: "Right Calf", cx: 121, cy: 348 },
+  { region: "Head", cx: 110, cy: 28 },
+  { region: "Neck", cx: 110, cy: 64 },
+  { region: "Left Shoulder", cx: 78, cy: 87 },
+  { region: "Right Shoulder", cx: 142, cy: 87 },
+  { region: "Upper Back", cx: 110, cy: 103 },
+  { region: "Left Arm", cx: 61, cy: 122 },
+  { region: "Right Arm", cx: 159, cy: 122 },
+  { region: "Mid Back", cx: 110, cy: 143 },
+  { region: "Left Elbow", cx: 56, cy: 155 },
+  { region: "Right Elbow", cx: 164, cy: 155 },
+  { region: "Lower Back", cx: 110, cy: 183 },
+  { region: "Left Forearm", cx: 51, cy: 188 },
+  { region: "Right Forearm", cx: 169, cy: 188 },
+  { region: "Left Hip", cx: 93, cy: 212 },
+  { region: "Right Hip", cx: 127, cy: 212 },
+  { region: "Left Glute", cx: 99, cy: 236 },
+  { region: "Right Glute", cx: 121, cy: 236 },
+  { region: "Left Hand", cx: 47, cy: 238 },
+  { region: "Right Hand", cx: 173, cy: 238 },
+  { region: "Left Thigh", cx: 97, cy: 272 },
+  { region: "Right Thigh", cx: 123, cy: 272 },
+  { region: "Left Calf", cx: 99, cy: 342 },
+  { region: "Right Calf", cx: 121, cy: 342 },
+  { region: "Left Heel", cx: 99, cy: 398 },
+  { region: "Right Heel", cx: 121, cy: 398 },
 ];
 
 // Medical color scale: green / yellow / orange / red / purple(chronic-severe)
@@ -129,19 +153,21 @@ export default function BodyFigure({ side = "front", sex = "female", latest = {}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect?.(region); } }}
           >
             <title>{region}{entry ? ` — ${entry.intensity}/10` : ""}</title>
-            {severe && <circle cx={cx} cy={cy} r="15" fill={color} opacity="0.45" filter="url(#bm-glow)" className="bm-pulse" />}
-            {isSel && <circle cx={cx} cy={cy} r="16" fill="var(--accent)" opacity="0.28" filter="url(#bm-glow)" />}
-            {isSel && <circle cx={cx} cy={cy} r="12.5" fill="none" stroke="var(--accent)" strokeWidth="2.5" />}
+            {/* Invisible hit target keeps small dots easy to tap despite the dense layout. */}
+            <circle cx={cx} cy={cy} r="9" fill="transparent" />
+            {severe && <circle cx={cx} cy={cy} r="12" fill={color} opacity="0.45" filter="url(#bm-glow)" className="bm-pulse" />}
+            {isSel && <circle cx={cx} cy={cy} r="13" fill="var(--accent)" opacity="0.28" filter="url(#bm-glow)" />}
+            {isSel && <circle cx={cx} cy={cy} r="9.5" fill="none" stroke="var(--accent)" strokeWidth="2.2" />}
             <circle
               cx={cx}
               cy={cy}
-              r={entry ? 7.5 : 5.5}
+              r={entry ? 6 : 4}
               fill={color || "var(--surface)"}
               stroke={color || "var(--muted)"}
-              strokeWidth={entry ? 1.5 : 1.6}
-              opacity={entry ? 0.95 : 0.65}
+              strokeWidth={entry ? 1.3 : 1.4}
+              opacity={entry ? 0.95 : 0.62}
             />
-            {entry ? <circle cx={cx} cy={cy} r="2.6" fill="#fff" opacity="0.85" /> : null}
+            {entry ? <circle cx={cx} cy={cy} r="2.1" fill="#fff" opacity="0.85" /> : null}
           </g>
         );
       })}

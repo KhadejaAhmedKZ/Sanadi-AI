@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { HeartPulse, ChevronsLeft, ChevronsRight, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNotifications } from "../hooks/useNotifications.js";
+import { Lock } from "lucide-react";
 import { NAV, AccessibilityIcon } from "../nav.js";
 
 function Item({ to, icon: Icon, label, end, onNavigate, collapsed }) {
@@ -53,6 +54,7 @@ export default function Sidebar({ open, onNavigate, collapsed, onToggleCollapse 
         {!collapsed && <div className="nav-group-label">Settings</div>}
         <div style={{ position: "relative" }}>
           <Item to="/accessibility" icon={AccessibilityIcon} label="Accessibility" onNavigate={onNavigate} collapsed={collapsed} />
+          <Item to="/privacy" icon={Lock} label="Security & Privacy" onNavigate={onNavigate} collapsed={collapsed} />
           {notifications.length > 0 && (
             <motion.span
               className="sidebar-badge"

@@ -17,6 +17,8 @@ const TITLES = {
   "/labs": "Lab Results",
   "/find-care": "Find Care",
   "/body-map": "Body Map",
+  "/monitoring": "AI Safety Monitor",
+  "/privacy": "Security & Privacy",
   "/learn": "Learning Hub",
   "/analytics": "Analytics",
   "/care": "Specialized Care",

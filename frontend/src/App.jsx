@@ -12,6 +12,8 @@ import Medications from "./pages/Medications.jsx";
 import Labs from "./pages/Labs.jsx";
 import FindCare from "./pages/FindCare.jsx";
 import BodyMap from "./pages/BodyMap.jsx";
+import Monitoring from "./pages/Monitoring.jsx";
+import Privacy from "./pages/Privacy.jsx";
 import Learning from "./pages/Learning.jsx";
 import Accessibility from "./pages/Accessibility.jsx";
 import NotFound from "./pages/NotFound.jsx";
@@ -77,6 +79,8 @@ export default function App() {
         <Route path="/labs" element={<RequireRole role="patient"><Labs /></RequireRole>} />
         <Route path="/find-care" element={<RequireRole role="patient"><FindCare /></RequireRole>} />
         <Route path="/body-map" element={<RequireRole role="patient"><BodyMap /></RequireRole>} />
+        <Route path="/monitoring" element={<RequireRole role="patient"><Monitoring /></RequireRole>} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/learn" element={<Learning />} />
         <Route path="/analytics" element={<RequireRole role="patient"><LazyPage><Analytics /></LazyPage></RequireRole>} />
         <Route path="/care/rehabilitation" element={<RequireRole role="patient"><LazyPage><Rehab /></LazyPage></RequireRole>} />

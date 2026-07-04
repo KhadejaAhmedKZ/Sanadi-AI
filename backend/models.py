@@ -226,6 +226,21 @@ class Escalation(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class EmergencyEvent(Base):
+    """A patient-safety event from AI Vision monitoring (fall, inactivity…)."""
+
+    __tablename__ = "emergency_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    event_type: Mapped[str] = mapped_column(String(60))          # e.g. "possible_fall"
+    status: Mapped[str] = mapped_column(String(24), default="detected")  # detected|confirmed_ok|help_needed|auto_escalated
+    confidence: Mapped[int] = mapped_column(Integer, default=0)  # 0-100
+    detail: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class Notification(Base):
     __tablename__ = "notifications"
 

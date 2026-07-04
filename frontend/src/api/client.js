@@ -123,6 +123,11 @@ export const api = {
   saveBodyAssessment: (payload) => request("/body/assessments", { method: "POST", body: payload }),
   analyzeBodyAssessment: (id) => request(`/body/assessments/${id}/analyze`, { method: "POST" }),
 
+  // AI Vision Emergency Monitoring
+  monitoringEvent: (payload) => request("/monitoring/events", { method: "POST", body: payload }),
+  monitoringRespond: (id, status) => request(`/monitoring/events/${id}/respond`, { method: "POST", body: { status } }),
+  monitoringEvents: (pid) => request(`/monitoring/patients/${pid}/events`),
+
   // Lab results
   labs: (pid) => request(`/labs/patients/${pid}`),
   addLab: (payload) => request("/labs", { method: "POST", body: payload }),
