@@ -79,21 +79,50 @@ sixth dimension.*
 - **Originality.** All application logic, system design, and integration
   were created by the participant within the 22 June – 12 July 2026 build
   window — the full git history in this repository is the audit trail.
-- **Tools disclosure (as required):**
-  - *AI tools:* Claude Code (AI pair-programming for code generation and
-    review), Google Gemini API (`gemini-2.x` via the official `google-genai`
-    SDK — the product's runtime AI for chat, vision, summaries, and
-    insights).
-  - *Open-source libraries:* FastAPI, SQLAlchemy, Pydantic, Uvicorn, passlib
-    + bcrypt (backend); React, Vite, React Router, Framer Motion, Recharts,
-    Lucide (frontend); MediaPipe Tasks Vision (on-device face control);
-    Jitsi Meet (open-source video calls); Web Speech API (browser-native
-    voice).
-  - *Infrastructure:* GitHub Pages (frontend hosting), Render free tier
-    (backend hosting), GitHub Actions (CI/CD).
 - **Self-funded:** built entirely on free tiers — the engineering
   consequences of that constraint (single-call orchestration, rule-based
   triage) are documented under Technical Execution below.
+
+### Tools used — full disclosure
+
+> *Per the competition rules:* "Use any AI coding tools, AI APIs, open-source
+> libraries, public APIs, and pre-built components. Tools used must be fully
+> disclosed in the submission document." The complete list is below.
+
+**AI coding tools**
+- **Claude Code** (Anthropic) — AI pair-programming assistant used for code
+  generation, refactoring, and review throughout the build. All application
+  logic, system design, and integration decisions are the participant's own.
+
+**AI APIs (runtime intelligence)**
+- **Google Gemini API** via the official **`google-genai`** Python SDK — powers
+  the multi-agent chat + orchestration, the role assistants (Primary Carer /
+  provider), image analysis (chat photos, meal photos), pre-visit summaries,
+  case insights, the caregiver education guide, lab-result explanations, body-map
+  assessments, and meal nutrition feedback.
+
+**On-device AI (browser, no data leaves the device)**
+- **MediaPipe Tasks Vision** (Google, WASM) — face-landmark tracking for
+  hands-free **Face Control**, and **pose detection** for **AI Vision Emergency
+  Monitoring** (fall detection) and the **Motion Coach** rep-counter.
+- **Web Speech API** (browser-native) — speech-to-text dictation and
+  text-to-speech for the accessibility suite.
+
+**Open-source libraries**
+- *Backend:* FastAPI, SQLAlchemy, Pydantic, Uvicorn, passlib + bcrypt.
+- *Frontend:* React, Vite, React Router, Framer Motion, Recharts, Lucide
+  (icons), `@mediapipe/tasks-vision`.
+
+**Pre-built components / public services**
+- **Jitsi Meet** (open-source, `meet.jit.si`) — in-app peer-to-peer **video
+  visits** (telehealth).
+- **Google Fonts** — Inter (body) and Lexend (display).
+- **UAE PASS** — the national digital-identity sign-in is a **simulated visual
+  integration** in this prototype (no real UAE PASS connection).
+
+**Infrastructure / hosting**
+- **GitHub Pages** (frontend), **Render** free tier (backend), **GitHub
+  Actions** (CI/CD).
 
 ### Problem Fit — 20%
 
