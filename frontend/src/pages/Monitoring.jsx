@@ -34,6 +34,7 @@ export default function Monitoring() {
   const spikeRef = useRef({ high: false, stillFrames: 0 });
   const cdRef = useRef(null);
   const emergencyRef = useRef(null);
+  const lastTickRef = useRef(0);
 
   async function loadHistory() {
     try { setHistory(await api.monitoringEvents(user.id)); } catch { /* ignore */ }
@@ -80,45 +81,60 @@ export default function Monitoring() {
     setMotion(0);
   }
 
-  function loop() {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.videoWidth === 0) {
-      rafRef.current = requestAnimationFrame(loop);
-      return;
-    }
-    const w = 64, h = 48;
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(video, 0, 0, w, h);
-    const frame = ctx.getImageData(0, 0, w, h).data;
-
-    if (prevFrameRef.current) {
-      let diff = 0;
-      for (let i = 0; i < frame.length; i += 4) {
-        diff += Math.abs(frame[i] - prevFrameRef.current[i]);
-      }
-      const level = Math.min(100, Math.round((diff / (w * h)) * 0.9));
-      setMotion(level);
-
-      // Fall signature: a spike (>45) then >~2.5s of near-stillness (<6).
-      const s = spikeRef.current;
-      if (level > 45) { s.high = true; s.stillFrames = 0; }
-      else if (s.high) {
-        if (level < 6) {
-          s.stillFrames += 1;
-          if (s.stillFrames > 70 && !emergencyRef.current) {
-            triggerEmergency("possible_fall", 82, "Motion spike followed by sustained stillness");
-            s.high = false; s.stillFrames = 0;
-          }
-        } else if (level > 15) {
-          s.high = false; s.stillFrames = 0; // recovered — moving normally
-        }
-      }
-      setStatus(level > 45 ? "Sudden movement" : level < 6 ? "Still" : level < 15 ? "Resting" : "Active");
-    }
-    prevFrameRef.current = frame.slice();
+  // Throttle analysis to ~8 fps: plenty for fall detection, and it avoids a
+  // 60/sec setState storm that can freeze the tab. All frame work is guarded
+  // so a canvas hiccup can never crash the page.
+  function loop(ts) {
     rafRef.current = requestAnimationFrame(loop);
+    const last = lastTickRef.current;
+    if (ts && last && ts - last < 120) return; // ~8 fps
+    lastTickRef.current = ts || performance.now();
+
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!video || !canvas || video.videoWidth === 0) return;
+
+      const w = 64, h = 48;
+      if (canvas.width !== w) { canvas.width = w; canvas.height = h; }
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, w, h);
+      const frame = ctx.getImageData(0, 0, w, h).data;
+
+      const prev = prevFrameRef.current;
+      if (prev && prev.length === frame.length) {
+        let diff = 0;
+        for (let i = 0; i < frame.length; i += 4) {
+          diff += Math.abs(frame[i] - prev[i]);
+        }
+        const level = Math.min(100, Math.round((diff / (w * h)) * 0.9));
+
+        // Only re-render when the value actually changes.
+        setMotion((m) => (m === level ? m : level));
+
+        // Fall signature: a spike (>45) then sustained near-stillness (<6)
+        // for ~20 analysis frames (~2.5s at 8 fps).
+        const s = spikeRef.current;
+        if (level > 45) { s.high = true; s.stillFrames = 0; }
+        else if (s.high) {
+          if (level < 6) {
+            s.stillFrames += 1;
+            if (s.stillFrames > 20 && !emergencyRef.current) {
+              s.high = false; s.stillFrames = 0;
+              triggerEmergency("possible_fall", 82, "Motion spike followed by sustained stillness");
+            }
+          } else if (level > 15) {
+            s.high = false; s.stillFrames = 0; // recovered — moving normally
+          }
+        }
+        const next = level > 45 ? "Sudden movement" : level < 6 ? "Still" : level < 15 ? "Resting" : "Active";
+        setStatus((st) => (st === next ? st : next));
+      }
+      prevFrameRef.current = frame;
+    } catch {
+      /* transient frame-processing issue — next tick retries */
+    }
   }
 
   async function triggerEmergency(eventType, conf, detail) {

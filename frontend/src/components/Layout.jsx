@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar.jsx";
 import TopBar from "./TopBar.jsx";
+import ErrorBoundary from "./ErrorBoundary.jsx";
 
 export default function Layout() {
   const [open, setOpen] = useState(false);
@@ -36,7 +37,9 @@ export default function Layout() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
             >
-              <Outlet />
+              <ErrorBoundary key={location.pathname}>
+                <Outlet />
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </div>
