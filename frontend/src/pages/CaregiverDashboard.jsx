@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
@@ -10,12 +11,6 @@ import Markdown from "../components/Markdown.jsx";
 import { ReminderList } from "../components/CareTools.jsx";
 
 const SCOPES = ["medications", "appointments", "symptoms", "safety"];
-const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "alerts", label: "Alerts" },
-  { id: "understand", label: "🧠 Understand" },
-  { id: "calendar", label: "Calendar & Routine" },
-];
 const POLL_MS = 20000; // live alert polling
 
 function statusFromOverview(overview, urgentCount) {
@@ -33,7 +28,13 @@ export default function CaregiverDashboard() {
   const caregiverId = user.id;
   const [patientId, setPatientId] = useState(1);
   const [manageOpen, setManageOpen] = useState(false);
-  const [tab, setTab] = useState("overview");
+  const location = useLocation();
+  // Sections are now dedicated, sidebar-accessible pages (this component stays
+  // mounted across them, so all state/logic is unchanged — only the layout moves).
+  const section = location.pathname.endsWith("/alerts") ? "alerts"
+    : location.pathname.endsWith("/understand") ? "understand"
+    : location.pathname.endsWith("/calendar") ? "calendar"
+    : "overview";
 
   const [overview, setOverview] = useState(null);
   const [notifs, setNotifs] = useState([]);
@@ -104,7 +105,7 @@ export default function CaregiverDashboard() {
 
   // Load the AI guide when the Understand tab opens (cached per patient per day).
   useEffect(() => {
-    if (tab !== "understand" || !overview || guide || guideLoading) return;
+    if (section !== "understand" || !overview || guide || guideLoading) return;
     const cacheKey = `sanadi_edu_${patientId}_${new Date().toDateString()}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) { setGuide(cached); return; }
@@ -117,7 +118,7 @@ export default function CaregiverDashboard() {
       })
       .catch((e) => setGuideError(e.message))
       .finally(() => setGuideLoading(false));
-  }, [tab, overview]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [section, overview]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset per-patient AI state when switching patients.
   useEffect(() => { setGuide(""); setGuideError(""); setEscOpen(false); }, [patientId]);
@@ -261,16 +262,7 @@ export default function CaregiverDashboard() {
             )}
           </AnimatePresence>
 
-          <div className="tabs">
-            {TABS.map((t) => (
-              <button key={t.id} className={"tab" + (tab === t.id ? " active" : "")} onClick={() => setTab(t.id)}>
-                {t.label}
-                {t.id === "alerts" && urgentCount > 0 && <span className="badge red" style={{ marginLeft: 8 }}>{urgentCount}</span>}
-              </button>
-            ))}
-          </div>
-
-          {tab === "overview" && (
+          {section === "overview" && (
             <motion.div className="grid" style={{ gap: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="grid cols-3">
                 {"adherence_rate" in overview && (
@@ -299,7 +291,7 @@ export default function CaregiverDashboard() {
             </motion.div>
           )}
 
-          {tab === "alerts" && (
+          {section === "alerts" && (
             <motion.div className="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="row between" style={{ flexWrap: "wrap", gap: 10 }}>
                 <div>
@@ -327,7 +319,7 @@ export default function CaregiverDashboard() {
             </motion.div>
           )}
 
-          {tab === "understand" && (
+          {section === "understand" && (
             <motion.div className="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="row between" style={{ flexWrap: "wrap", gap: 10 }}>
                 <div>
@@ -360,7 +352,7 @@ export default function CaregiverDashboard() {
             </motion.div>
           )}
 
-          {tab === "calendar" && (
+          {section === "calendar" && (
             <motion.div className="grid" style={{ gap: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="grid cols-2">
                 <div className="card">

@@ -23,6 +23,9 @@ import {
   Users,
   Stethoscope,
   Accessibility,
+  Sparkles,
+  Bell,
+  BookOpen,
 } from "lucide-react";
 
 export const NAV = {
@@ -31,6 +34,7 @@ export const NAV = {
       label: "Main",
       items: [
         { to: "/", icon: Home, label: "Home", end: true },
+        { to: "/coordinator", icon: Sparkles, label: "Care Coordinator" },
         { to: "/chat", icon: MessageCircleMore, label: "AI Assistant" },
         { to: "/body-map", icon: PersonStanding, label: "Body Map" },
         { to: "/monitoring", icon: ShieldAlert, label: "Safety Monitor" },
@@ -57,9 +61,17 @@ export const NAV = {
       label: "Main",
       items: [
         { to: "/", icon: Home, label: "Home", end: true },
-        { to: "/caregiver", icon: Users, label: "Primary Carer Portal" },
+        { to: "/caregiver", icon: Users, label: "Primary Carer Portal", end: true },
         { to: "/chat", icon: MessageCircleMore, label: "AI Assistant" },
         { to: "/learn", icon: GraduationCap, label: "Learning Hub" },
+      ],
+    },
+    {
+      label: "This Patient",
+      items: [
+        { to: "/caregiver/alerts", icon: Bell, label: "Safety Alerts" },
+        { to: "/caregiver/understand", icon: BookOpen, label: "Understand" },
+        { to: "/caregiver/calendar", icon: CalendarDays, label: "Calendar & Routine" },
       ],
     },
   ],
@@ -68,9 +80,17 @@ export const NAV = {
       label: "Main",
       items: [
         { to: "/", icon: Home, label: "Home", end: true },
-        { to: "/provider", icon: Stethoscope, label: "Clinical Workspace" },
+        { to: "/provider", icon: Stethoscope, label: "Clinical Workspace", end: true },
         { to: "/chat", icon: MessageCircleMore, label: "Clinical Copilot" },
         { to: "/learn", icon: GraduationCap, label: "Learning Hub" },
+      ],
+    },
+    {
+      label: "Clinical",
+      items: [
+        { to: "/provider/queue", icon: CalendarDays, label: "Appointment Queue" },
+        { to: "/provider/escalations", icon: ShieldAlert, label: "Urgent Reviews" },
+        { to: "/provider/analytics", icon: BarChart3, label: "Population Analytics" },
       ],
     },
   ],

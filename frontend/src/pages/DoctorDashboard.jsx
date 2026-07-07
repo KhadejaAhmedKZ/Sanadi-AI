@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -52,6 +53,8 @@ export default function DoctorDashboard() {
   const [bodySide, setBodySide] = useState("front");
   const [bodySex, setBodySex] = useState("female");
   const [bodyRegion, setBodyRegion] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Voice dictation for clinical notes (appends each finished phrase).
   const voice = useVoice({
@@ -173,48 +176,174 @@ export default function DoctorDashboard() {
     );
   }
 
+  // Information architecture: the crowded overview is split into dedicated,
+  // sidebar-accessible pages. All state/effects above are shared (this component
+  // stays mounted across the sub-routes), so nothing about the logic changes.
+  const path = location.pathname;
+  const section = path.endsWith("/queue") ? "queue"
+    : path.endsWith("/escalations") ? "escalations"
+    : path.endsWith("/analytics") ? "analytics"
+    : "workspace";
+  const openEscalations = escalations.filter((e) => e.status !== "resolved");
+
+  // ---------- Appointment Queue (own page) ----------
+  if (section === "queue") {
+    return (
+      <div className="grid" style={{ gap: 22 }}>
+        <div className="page-head"><h1>📅 Appointment Queue</h1><p>Upcoming visits across your panel — next 14 days.</p></div>
+        <ErrorNote message={error} />
+        <div className="card">
+          {queue.length === 0 ? (
+            <EmptyState icon="📅" title="Nothing scheduled" />
+          ) : queue.map((a) => (
+            <div className="list-row" key={a.id}>
+              <div className="lead">
+                <div className="dot">{a.is_video ? "📹" : "🏥"}</div>
+                <div>
+                  <div style={{ fontWeight: 700 }}>{a.patient_name}</div>
+                  <div className="muted" style={{ fontSize: ".8rem" }}>{a.department}{a.reason ? ` — ${a.reason}` : ""}</div>
+                </div>
+              </div>
+              <span className="badge">{new Date(a.scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- Urgent Reviews / Escalations (own page) ----------
+  if (section === "escalations") {
+    return (
+      <div className="grid" style={{ gap: 22 }}>
+        <div className="page-head"><h1>🚨 Urgent Reviews</h1><p>Reviews requested by Primary Carers — acknowledge or mark reviewed.</p></div>
+        <ErrorNote message={error} />
+        <div className="card">
+          {openEscalations.length === 0 ? (
+            <EmptyState icon="✅" title="No urgent reviews" hint="Requests from Primary Carers appear here." />
+          ) : openEscalations.map((e) => (
+            <div className="list-row" key={e.id} style={{ alignItems: "flex-start" }}>
+              <div className="lead" style={{ alignItems: "flex-start" }}>
+                <div className="dot">🚑</div>
+                <div>
+                  <button
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit", fontWeight: 800 }}
+                    onClick={() => { const p = patients.find((x) => x.id === e.patient_id); if (p) { selectPatient(p); navigate("/provider"); } }}
+                  >
+                    {e.patient_name}
+                  </button>
+                  {e.status === "acknowledged" && <span className="badge" style={{ marginLeft: 6 }}>reviewing</span>}
+                  <div className="muted" style={{ fontSize: ".82rem", marginTop: 2 }}>“{e.reason}” — {e.raised_by_name}</div>
+                </div>
+              </div>
+              <div className="row" style={{ gap: 6 }}>
+                {e.status === "open" && (
+                  <button className="btn ghost sm" onClick={() => handleEscalation(e.id, "acknowledged")}>👀 Acknowledge</button>
+                )}
+                <button className="btn danger sm" onClick={() => handleEscalation(e.id, "resolved")}>✓ Mark reviewed</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- Population Analytics (own page) ----------
+  if (section === "analytics") {
+    const riskLevelData = [
+      { name: "Stable", value: patients.filter((p) => (p.risk_level || "stable") === "stable").length, fill: "#22c55e" },
+      { name: "Watch", value: patients.filter((p) => p.risk_level === "watch").length, fill: "#f59e0b" },
+      { name: "High", value: patients.filter((p) => p.risk_level === "high").length, fill: "#ef4444" },
+    ];
+    return (
+      <div className="grid" style={{ gap: 22 }}>
+        <div className="page-head"><h1>📊 Population Analytics</h1><p>Panel-wide adherence and risk. Synthetic demo data.</p></div>
+        <ErrorNote message={error} />
+        {population && (
+          <div className="kpi-strip">
+            <div><strong>{population.total_patients}</strong><span>Patients</span></div>
+            <div><strong>{Math.round(population.avg_adherence * 100)}%</strong><span>Avg adherence</span></div>
+            <div style={{ color: "var(--danger)" }}><strong>{population.high_risk_patients.length}</strong><span>High-risk</span></div>
+          </div>
+        )}
+        <div className="grid cols-2">
+          <div className="card">
+            <h3 className="card-title">Adherence by patient</h3>
+            <p className="card-sub">Medication adherence rate</p>
+            {adherenceChartData.length === 0 ? <EmptyState icon="📊" title="No patients yet" /> : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={adherenceChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke={gridColor} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke={gridColor} />
+                  <Tooltip formatter={(v) => [`${v}%`, "Adherence"]} contentStyle={{ borderRadius: 12, border: "none" }} />
+                  <Bar dataKey="adherence" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div className="card">
+            <h3 className="card-title">Population risk</h3>
+            <p className="card-sub">Adherence-based risk distribution</p>
+            {riskData.length === 0 ? <EmptyState icon="🥧" title="No data yet" /> : (
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={riskData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={80} paddingAngle={3}>
+                    {riskData.map((_, i) => <Cell key={i} fill={RISK_COLORS[i]} />)}
+                  </Pie>
+                  <Legend />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: "none" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+        <div className="card">
+          <h3 className="card-title">Patients by risk level</h3>
+          <p className="card-sub">How your panel breaks down across the triage bands</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={riskLevelData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke={gridColor} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke={gridColor} />
+              <Tooltip contentStyle={{ borderRadius: 12, border: "none" }} />
+              <Bar dataKey="value" name="Patients" radius={[6, 6, 0, 0]}>
+                {riskLevelData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        {population?.high_risk_patients?.length > 0 && (
+          <div className="card" style={{ background: "var(--danger-100)", borderColor: "var(--danger)" }}>
+            <h3 className="card-title">⚠️ High-risk patients (adherence &lt; 70%)</h3>
+            {population.high_risk_patients.map((p) => (
+              <div className="list-row" key={p.id}>
+                <div className="lead"><div className="dot">🚩</div><div style={{ fontWeight: 700 }}>{p.name}</div></div>
+                <span className="badge red">{Math.round(p.adherence_rate * 100)}% · {p.missed_doses} missed</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="clinical-shell">
       {/* LEFT: patient roster + KPIs + queue */}
       <div className="clinical-rail">
-        {escalations.filter((e) => e.status !== "resolved").length > 0 && (
-          <motion.div
+        {openEscalations.length > 0 && (
+          <button
             className="card"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{ background: "var(--danger-100)", borderColor: "var(--danger)", padding: 14 }}
+            onClick={() => navigate("/provider/escalations")}
+            style={{ background: "var(--danger-100)", borderColor: "var(--danger)", padding: 12, cursor: "pointer", textAlign: "left", width: "100%" }}
           >
-            <h3 className="card-title" style={{ fontSize: ".9rem" }}>🚨 Urgent reviews requested</h3>
-            {escalations.filter((e) => e.status !== "resolved").map((e) => (
-              <div key={e.id} style={{ padding: "8px 0", borderTop: "1px solid var(--danger)", marginTop: 6 }}>
-                <button
-                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit", width: "100%" }}
-                  onClick={() => {
-                    const p = patients.find((x) => x.id === e.patient_id);
-                    if (p) selectPatient(p);
-                  }}
-                >
-                  <div style={{ fontWeight: 800, fontSize: ".85rem" }}>
-                    {e.patient_name}
-                    {e.status === "acknowledged" && <span className="badge" style={{ marginLeft: 6 }}>reviewing</span>}
-                  </div>
-                  <div className="muted" style={{ fontSize: ".78rem", margin: "2px 0 6px" }}>
-                    “{e.reason}” — {e.raised_by_name}
-                  </div>
-                </button>
-                <div className="row" style={{ gap: 6 }}>
-                  {e.status === "open" && (
-                    <button className="btn ghost sm" style={{ fontSize: ".72rem" }} onClick={() => handleEscalation(e.id, "acknowledged")}>
-                      👀 Acknowledge
-                    </button>
-                  )}
-                  <button className="btn danger sm" style={{ fontSize: ".72rem" }} onClick={() => handleEscalation(e.id, "resolved")}>
-                    ✓ Mark reviewed
-                  </button>
-                </div>
-              </div>
-            ))}
-          </motion.div>
+            <div style={{ fontWeight: 800, fontSize: ".85rem" }}>
+              🚨 {openEscalations.length} urgent review{openEscalations.length > 1 ? "s" : ""} requested
+            </div>
+            <div className="muted" style={{ fontSize: ".76rem", marginTop: 2 }}>Tap to review →</div>
+          </button>
         )}
 
         {population && (
@@ -263,82 +392,22 @@ export default function DoctorDashboard() {
           })}
         </div>
 
-        <div className="card" style={{ marginTop: 4 }}>
-          <h3 className="card-title" style={{ fontSize: ".95rem" }}>📅 Appointment queue</h3>
-          <p className="card-sub" style={{ fontSize: ".8rem" }}>Next 14 days</p>
-          {queue.length === 0 ? (
-            <EmptyState icon="📅" title="Nothing scheduled" />
-          ) : (
-            queue.slice(0, 6).map((a) => (
-              <div className="queue-row" key={a.id}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: ".85rem" }}>{a.patient_name}</div>
-                  <div className="muted" style={{ fontSize: ".76rem" }}>{a.department}</div>
-                </div>
-                <span className="muted" style={{ fontSize: ".76rem" }}>
-                  {new Date(a.scheduled_for).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
+        {/* Appointment queue now has its own page (sidebar → Appointment Queue). */}
       </div>
 
       {/* RIGHT: detail pane — selected patient, or population view */}
       <div className="clinical-detail">
         <AnimatePresence mode="wait">
           {!selectedPatient ? (
-            <motion.div key="population" className="grid" style={{ gap: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="welcome" className="grid" style={{ gap: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="page-head" style={{ marginBottom: 0 }}>
-                <h1>👨‍⚕️ Clinical Command Center</h1>
-                <p>Select a patient on the left for their AI summary and notes, or review population risk here.</p>
+                <h1>👨‍⚕️ Clinical Workspace</h1>
+                <p>Select a patient on the left for their AI summary, trends, labs, body map and notes. The appointment queue, urgent reviews and population analytics now live in the sidebar.</p>
               </div>
-
-              <div className="grid cols-2">
-                <div className="card">
-                  <h3 className="card-title">Adherence by patient</h3>
-                  <p className="card-sub">Medication adherence rate</p>
-                  {adherenceChartData.length === 0 ? <EmptyState icon="📊" title="No patients yet" /> : (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={adherenceChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                        <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke={gridColor} />
-                        <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke={gridColor} />
-                        <Tooltip formatter={(v) => [`${v}%`, "Adherence"]} contentStyle={{ borderRadius: 12, border: "none" }} />
-                        <Bar dataKey="adherence" fill="#2563eb" radius={[6, 6, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-
-                <div className="card">
-                  <h3 className="card-title">Population risk</h3>
-                  <p className="card-sub">Adherence-based risk distribution</p>
-                  {riskData.length === 0 ? <EmptyState icon="🥧" title="No data yet" /> : (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <PieChart>
-                        <Pie data={riskData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={80} paddingAngle={3}>
-                          {riskData.map((_, i) => <Cell key={i} fill={RISK_COLORS[i]} />)}
-                        </Pie>
-                        <Legend />
-                        <Tooltip contentStyle={{ borderRadius: 12, border: "none" }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
+              <div className="card center" style={{ padding: 40 }}>
+                <div style={{ fontSize: "2.4rem" }}>🩺</div>
+                <p className="muted" style={{ marginTop: 8 }}>No patient selected yet — pick one from the roster to begin.</p>
               </div>
-
-              {population?.high_risk_patients?.length > 0 && (
-                <div className="card" style={{ background: "var(--danger-100)", borderColor: "var(--danger)" }}>
-                  <h3 className="card-title">⚠️ High-risk patients (adherence &lt; 70%)</h3>
-                  {population.high_risk_patients.map((p) => (
-                    <div className="list-row" key={p.id}>
-                      <div className="lead"><div className="dot">🚩</div><div style={{ fontWeight: 700 }}>{p.name}</div></div>
-                      <span className="badge red">{Math.round(p.adherence_rate * 100)}% · {p.missed_doses} missed</span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </motion.div>
           ) : (
             <motion.div key={selectedPatient.id} className="grid" style={{ gap: 20 }} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>

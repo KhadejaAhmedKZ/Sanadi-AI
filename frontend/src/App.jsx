@@ -6,6 +6,7 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import Chat from "./pages/Chat.jsx";
+import CareCoordinator from "./pages/CareCoordinator.jsx";
 import PatientDashboard from "./pages/PatientDashboard.jsx";
 import Appointments from "./pages/Appointments.jsx";
 import Medications from "./pages/Medications.jsx";
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         {/* Patient-only sections */}
         <Route path="/chat" element={<Chat />} />
+        <Route path="/coordinator" element={<RequireRole role="patient"><CareCoordinator /></RequireRole>} />
         <Route path="/dashboard" element={<RequireRole role="patient"><PatientDashboard /></RequireRole>} />
         <Route path="/appointments" element={<RequireRole role="patient"><Appointments /></RequireRole>} />
         <Route path="/medications" element={<RequireRole role="patient"><Medications /></RequireRole>} />
@@ -87,8 +89,16 @@ export default function App() {
         <Route path="/analytics" element={<RequireRole role="patient"><LazyPage><Analytics /></LazyPage></RequireRole>} />
         <Route path="/care/rehabilitation" element={<RequireRole role="patient"><LazyPage><Rehab /></LazyPage></RequireRole>} />
         {/* Role portals */}
-        <Route path="/caregiver" element={<RequireRole role="caregiver"><LazyPage><CaregiverDashboard /></LazyPage></RequireRole>} />
-        <Route path="/provider" element={<RequireRole role="provider"><LazyPage><DoctorDashboard /></LazyPage></RequireRole>} />
+        <Route path="/caregiver" element={<RequireRole role="caregiver"><LazyPage><CaregiverDashboard /></LazyPage></RequireRole>}>
+          <Route path="alerts" element={null} />
+          <Route path="understand" element={null} />
+          <Route path="calendar" element={null} />
+        </Route>
+        <Route path="/provider" element={<RequireRole role="provider"><LazyPage><DoctorDashboard /></LazyPage></RequireRole>}>
+          <Route path="queue" element={null} />
+          <Route path="escalations" element={null} />
+          <Route path="analytics" element={null} />
+        </Route>
         {/* Open to everyone */}
         <Route path="/care" element={<LazyPage><SpecializedCare /></LazyPage>} />
         <Route path="/care/:moduleId" element={<LazyPage><CareModule /></LazyPage>} />

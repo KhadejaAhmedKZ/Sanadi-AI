@@ -59,6 +59,15 @@ export const api = {
     request("/chat", { method: "POST", body: { patient_id, message } }),
   assistantChat: (payload) => request("/chat/assistant", { method: "POST", body: payload }),
 
+  // AI Care Coordinator (agentic — plans & executes multi-step care from one message)
+  coordinatorRun: (patient_id, message) =>
+    request("/coordinator/run", { method: "POST", body: { patient_id, message } }),
+  coordinatorConfirm: (patient_id, action, department, reason) =>
+    request("/coordinator/confirm", {
+      method: "POST",
+      body: { patient_id, action, department, reason },
+    }),
+
   chatWithImage: async (patient_id, file, message) => {
     const form = new FormData();
     form.append("patient_id", patient_id);
