@@ -47,6 +47,13 @@ export const FRONT_REGIONS = [
   { region: "Left Foot", cx: 127, cy: 406 },
   { region: "Right Toes", cx: 88, cy: 418 },
   { region: "Left Toes", cx: 132, cy: 418 },
+  { region: "Chin", cx: 110, cy: 50 },
+  { region: "Right Ear", cx: 100, cy: 30 },
+  { region: "Left Ear", cx: 120, cy: 30 },
+  { region: "Right Collarbone", cx: 96, cy: 80 },
+  { region: "Left Collarbone", cx: 124, cy: 80 },
+  { region: "Sternum", cx: 110, cy: 93 },
+  { region: "Navel", cx: 110, cy: 150 },
 ];
 
 export const BACK_REGIONS = [
@@ -83,6 +90,14 @@ export const BACK_REGIONS = [
   { region: "Right Ankle", cx: 121, cy: 384 },
   { region: "Left Heel", cx: 99, cy: 402 },
   { region: "Right Heel", cx: 121, cy: 402 },
+  { region: "Base of Skull", cx: 110, cy: 46 },
+  { region: "Left Flank", cx: 95, cy: 150 },
+  { region: "Right Flank", cx: 125, cy: 150 },
+  { region: "Coccyx", cx: 110, cy: 216 },
+  { region: "Left Hamstring", cx: 99, cy: 302 },
+  { region: "Right Hamstring", cx: 121, cy: 302 },
+  { region: "Left Knee", cx: 99, cy: 318 },
+  { region: "Right Knee", cx: 121, cy: 318 },
 ];
 
 // Medical color scale: green / yellow / orange / red / purple(chronic-severe)

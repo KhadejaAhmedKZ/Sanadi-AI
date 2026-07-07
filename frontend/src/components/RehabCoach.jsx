@@ -40,7 +40,7 @@ const clonePose = () => Object.fromEntries(Object.entries(BASE).map(([k, v]) => 
 const EX = {
   "knee-flexion": {
     title: "Bend and straighten the knee",
-    highlight: [26], type: "cycle",
+    highlight: [26], type: "cycle", joints: ["hip", "knee", "ankle"],
     animate: (p, ph) => { p[28].x = lerp(0.43, 0.50, ph); p[28].y = lerp(0.94, 0.80, ph); }, // raise shin
     signal: (lm, S) => angle(lm[S.hip], lm[S.knee], lm[S.ankle]),
     active: (v) => v < 115, rest: (v) => v > 150, target: [165, 100],
@@ -48,7 +48,7 @@ const EX = {
   },
   "shoulder-raise": {
     title: "Raise the arm, then lower with control",
-    highlight: [12], type: "cycle",
+    highlight: [12], type: "cycle", joints: ["hip", "shoulder", "elbow"],
     animate: (p, ph) => { p[14].x = lerp(0.34, 0.30, ph); p[14].y = lerp(0.45, 0.30, ph); p[16].x = lerp(0.32, 0.24, ph); p[16].y = lerp(0.60, 0.16, ph); },
     signal: (lm, S) => angle(lm[S.hip], lm[S.shoulder], lm[S.elbow]),
     active: (v) => v > 70, rest: (v) => v < 40, target: [15, 95],
@@ -56,7 +56,7 @@ const EX = {
   },
   "balance-reach": {
     title: "Reach out, keep your balance, return",
-    highlight: [12, 16], type: "cycle",
+    highlight: [12, 16], type: "cycle", joints: ["shoulder", "wrist"],
     animate: (p, ph) => { p[14].x = lerp(0.34, 0.22, ph); p[16].x = lerp(0.32, 0.12, ph); p[16].y = lerp(0.60, 0.52, ph); },
     signal: (lm, S) => dist(lm[S.shoulder], lm[S.wrist]),
     active: (v) => v > 0.30, rest: (v) => v < 0.22, target: [0.16, 0.34],
@@ -64,14 +64,14 @@ const EX = {
   },
   "ankle-circles": {
     title: "Lift and circle the ankle",
-    highlight: [28], type: "motion",
+    highlight: [28], type: "motion", joints: ["knee", "ankle"],
     animate: (p, ph) => { const a = ph * Math.PI * 2; p[28].x = 0.43 + Math.cos(a) * 0.04; p[28].y = 0.90 + Math.sin(a) * 0.04; },
     signal: (lm, S) => (lm[S.ankle] && lm[S.knee] ? lm[S.knee].y - lm[S.ankle].y : null),
     cue: () => "Keep circling smoothly",
   },
   "grip-strength": {
     title: "Squeeze and release rhythmically",
-    highlight: [16], type: "motion",
+    highlight: [16], type: "motion", joints: ["wrist", "elbow"],
     animate: (p, ph) => { p[16].y = 0.60 - Math.abs(Math.sin(ph * Math.PI)) * 0.05; },
     signal: (lm, S) => (lm[S.wrist] && lm[S.elbow] ? dist(lm[S.wrist], lm[S.elbow]) : null),
     cue: () => "Keep the rhythm",
@@ -207,26 +207,34 @@ export default function RehabCoach({ exerciseId, running, view, speed, onRep, on
 
     if (lm) {
       side = bestSide(lm, cfg);
-      const need = ["shoulder", "hip"].map((k) => lm[side[k]]?.visibility ?? 0);
-      conf = Math.round((need.reduce((a, b) => a + b, 0) / need.length) * 100);
+      // Confidence from exactly the joints this exercise scores, so a poorly-seen
+      // limb can't corrupt the reading. Frames where any scored joint is unclear
+      // are skipped rather than folded into the score.
+      const scoreKeys = cfg.joints || ["shoulder", "hip"];
+      const jointVis = scoreKeys.map((k) => lm[side[k]]?.visibility ?? 0);
+      conf = Math.round((jointVis.reduce((a, b) => a + b, 0) / (jointVis.length || 1)) * 100);
+      const reliable = jointVis.length > 0 && Math.min(...jointVis) >= 0.5;
       patientSig = cfg.signal(lm, side);
 
-      // scoring
+      // scoring — only fold in frames where every scored joint is clearly visible
       const s = scoreRef.current;
-      if (patientSig != null && targetSig != null && cfg.type === "cycle") {
+      if (reliable && patientSig != null && targetSig != null && cfg.type === "cycle") {
         const scale = cfg.target ? Math.max(1e-3, Math.abs(cfg.target[0] - cfg.target[1])) : 60;
         const delta = Math.abs(patientSig - targetSig) / scale;
         const acc = Math.max(0, Math.min(100, Math.round(100 - delta * 90)));
         matchOk = delta < 0.35;
-        s.accuracy = ema(s.accuracy, acc);
+        // Adapt faster when confidence is high, slower when marginal — steadier score.
+        s.accuracy = ema(s.accuracy, acc, conf >= 80 ? 0.3 : 0.18);
         // ROM: how much of the instructor's range the patient has covered
         romRef.current.min = Math.min(romRef.current.min, patientSig);
         romRef.current.max = Math.max(romRef.current.max, patientSig);
         const patRange = romRef.current.max - romRef.current.min;
         const tgtRange = Math.abs(cfg.target[0] - cfg.target[1]);
         s.rom = ema(s.rom, Math.max(0, Math.min(100, Math.round((patRange / tgtRange) * 100))));
-      } else if (cfg.type === "motion") {
+      } else if (reliable && cfg.type === "motion") {
         matchOk = true; s.accuracy = ema(s.accuracy, 82); s.rom = ema(s.rom, 80);
+      } else if (!reliable) {
+        matchOk = false; // hold the score steady on low-visibility frames
       }
       // posture: torso uprightness
       const sh = lm[side.shoulder], hp = lm[side.hip];

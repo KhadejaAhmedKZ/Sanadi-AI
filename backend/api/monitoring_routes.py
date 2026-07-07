@@ -25,6 +25,7 @@ EVENT_LABELS = {
     "no_movement": "No movement after motion spike",
     "calling_for_help": "Possible call for help",
     "manual_test": "Monitoring test",
+    "sos": "SOS — help requested",
 }
 
 

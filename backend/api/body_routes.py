@@ -83,6 +83,21 @@ SPECIALIST_MAP = {
     "Right Shoulder Blade": ("Physiotherapy", "Shoulder-blade pain responds well to physiotherapy."),
     "Spine": ("Orthopedics", "Spine pain is best assessed by orthopedics."),
     "Sacrum": ("Orthopedics", "Tailbone/sacral pain is best assessed by orthopedics."),
+    # Additional front regions
+    "Chin": ("General", "Chin/jaw pain starts with a general check (dental/ENT referral if needed)."),
+    "Left Ear": ("General", "Ear symptoms start with a general physician (ENT referral if needed)."),
+    "Right Ear": ("General", "Ear symptoms start with a general physician (ENT referral if needed)."),
+    "Left Collarbone": ("Orthopedics", "Collarbone pain is musculoskeletal — orthopedics."),
+    "Right Collarbone": ("Orthopedics", "Collarbone pain is musculoskeletal — orthopedics."),
+    "Sternum": ("General", "Breastbone pain deserves a general check to rule out chest causes."),
+    "Navel": ("General", "Pain around the navel starts with a general physician."),
+    # Additional back regions
+    "Base of Skull": ("Neurology", "Pain at the base of the skull is best evaluated by a neurologist."),
+    "Left Flank": ("General", "Flank pain deserves a general check to rule out kidney causes."),
+    "Right Flank": ("General", "Flank pain deserves a general check to rule out kidney causes."),
+    "Coccyx": ("Orthopedics", "Tailbone (coccyx) pain is best assessed by orthopedics."),
+    "Left Hamstring": ("Physiotherapy", "Hamstring/muscle pain responds well to physiotherapy."),
+    "Right Hamstring": ("Physiotherapy", "Hamstring/muscle pain responds well to physiotherapy."),
 }
 VALID_REGIONS = set(SPECIALIST_MAP)
 

@@ -43,7 +43,7 @@ export default function Monitoring() {
   const poseRef = useRef(null);
   const prevPtsRef = useRef(null);
   const prevFrameRef = useRef(null);
-  const stateRef = useRef({ horiz: 0, dropWindow: [], lastObs: "" });
+  const stateRef = useRef({ horiz: 0, dropWindow: [], lastObs: "", suspect: 0, vr: null });
   const lastTickRef = useRef(0);
   const cdRef = useRef(null);
   const emergencyRef = useRef(null);
@@ -109,7 +109,7 @@ export default function Monitoring() {
     poseRef.current = null;
     prevPtsRef.current = null;
     prevFrameRef.current = null;
-    stateRef.current = { horiz: 0, dropWindow: [], lastObs: "" };
+    stateRef.current = { horiz: 0, dropWindow: [], lastObs: "", suspect: 0, vr: null };
     const ov = overlayRef.current;
     if (ov) ov.getContext("2d")?.clearRect(0, 0, ov.width, ov.height);
     setMonitoring(false);
@@ -169,14 +169,24 @@ export default function Monitoring() {
       }
     }
 
+    const s = stateRef.current;
+
     // Posture from torso orientation (normalized coords, y grows downward).
     const sh = { x: (get(11).x + get(12).x) / 2, y: (get(11).y + get(12).y) / 2 };
     const hp = { x: (get(23).x + get(24).x) / 2, y: (get(23).y + get(24).y) / 2 };
     const dx = sh.x - hp.x, dy = hp.y - sh.y; // dy>0 when shoulders above hips (upright)
     const len = Math.hypot(dx, dy) || 1e-3;
-    const verticalRatio = dy / len; // ~1 upright, ~0 horizontal
+    const rawVertical = dy / len; // ~1 upright, ~0 horizontal
+    // Smooth the orientation across frames (EMA) to cut landmark jitter.
+    s.vr = s.vr == null ? rawVertical : s.vr + (rawVertical - s.vr) * 0.4;
+    const verticalRatio = s.vr;
     const horizontal = verticalRatio < 0.4;
     const upright = verticalRatio > 0.6;
+    // "Grounded": the hips have dropped into the lower part of the frame — this
+    // separates a genuine fall from simply bending forward at the waist.
+    const grounded = hp.y > 0.62;
+    // Only trust the posture read when the torso landmarks are clearly visible.
+    const reliable = conf >= 45;
 
     // Motion: mean displacement of key points since last frame.
     let motionLevel = 0;
@@ -189,27 +199,38 @@ export default function Monitoring() {
     prevPtsRef.current = pts;
 
     // Rapid vertical drop of the shoulders over the last ~5 ticks.
-    const s = stateRef.current;
     s.dropWindow.push(sh.y);
     if (s.dropWindow.length > 6) s.dropWindow.shift();
     const drop = s.dropWindow.length >= 4 ? sh.y - Math.min(...s.dropWindow.slice(0, -1)) : 0;
-    const rapidDrop = drop > 0.22;
+    const rapidDrop = drop > 0.2;
 
-    // Fall logic: sustained horizontal posture, or a rapid drop into low posture.
-    if (horizontal && conf > 35) s.horiz += 1; else s.horiz = 0;
-    const fell = (s.horiz >= 8) || (rapidDrop && verticalRatio < 0.55 && conf > 35);
+    // Multi-factor fall detection with a confirmation window to cut false alarms.
+    // 1) A rapid drop opens a short "suspect" window (~2s of ticks).
+    if (reliable && rapidDrop) s.suspect = 14;
+    else if (s.suspect > 0) s.suspect -= 1;
+    // 2) Count sustained horizontal frames — only when the read is reliable.
+    if (reliable && horizontal) s.horiz += 1; else s.horiz = 0;
 
-    setPosture(horizontal ? "Lying / horizontal" : upright ? "Upright" : "Leaning");
+    // A fall is confirmed by EITHER a sustained horizontal posture on the ground,
+    // OR a rapid drop that resolves into a horizontal, grounded posture.
+    const sustainedFall = s.horiz >= 12 && grounded;
+    const droppedFall = s.suspect > 0 && horizontal && grounded && s.horiz >= 3;
+    const fell = reliable && (sustainedFall || droppedFall);
+
+    setPosture(!reliable ? "—" : horizontal ? "Lying / horizontal" : upright ? "Upright" : "Leaning");
 
     if (!emergencyRef.current) {
-      if (fell) {
-        s.horiz = 0;
+      if (!reliable) {
+        addNote("🔍 Step into frame — I can't see you clearly");
+      } else if (fell) {
+        s.horiz = 0; s.suspect = 0;
+        const evConf = Math.min(96, 74 + (grounded ? 8 : 0) + Math.max(0, Math.round((0.4 - verticalRatio) * 40)));
         addNote("🛑 Person appears to have fallen (horizontal on the ground)");
-        triggerEmergency("possible_fall", 88, `Posture horizontal (vertical ratio ${verticalRatio.toFixed(2)})`);
-      } else if (rapidDrop) {
-        addNote("⚠️ Sudden downward movement detected");
+        triggerEmergency("possible_fall", evConf, `Horizontal & grounded (ratio ${verticalRatio.toFixed(2)}, hip ${hp.y.toFixed(2)})`);
+      } else if (s.suspect > 0) {
+        addNote("⚠️ Sudden drop detected — watching…");
       } else if (horizontal) {
-        addNote("🛌 Person is lying down / horizontal");
+        addNote(grounded ? "🛌 Lying down / horizontal" : "↔️ Leaning far forward");
       } else if (motionLevel < 1.2) {
         addNote(upright ? "🧍 Standing still" : "🪑 Sitting / resting");
       } else if (motionLevel > 6) {
@@ -258,6 +279,19 @@ export default function Monitoring() {
     triggerEmergency("manual_test", 90, "Manual test");
   }
 
+  // Manual SOS / panic — immediately alerts the Primary Carer, no countdown.
+  async function sos() {
+    if (emergencyRef.current) return;
+    addNote("🆘 SOS — you requested help");
+    let ev = null;
+    try {
+      ev = await api.monitoringEvent({ patient_id: user.id, event_type: "sos", confidence: 100, detail: "Manual SOS — patient pressed the help button" });
+    } catch { /* offline — still confirm to the user below */ }
+    try { if (ev?.id) await api.monitoringRespond(ev.id, "help_needed"); } catch { /* ignore */ }
+    toast.error("🆘 SOS sent — your Primary Carer has been alerted");
+    loadHistory();
+  }
+
   async function respond(kind) {
     const ev = emergencyRef.current;
     clearInterval(cdRef.current);
@@ -292,13 +326,16 @@ export default function Monitoring() {
             <span className="status-pulse" style={{ "--pulse-color": monitoring ? "var(--success)" : "var(--muted)" }}>
               <span className="status-pulse-dot" /> {monitoring ? "🟢 Monitoring active" : "⚪ Monitoring disabled"}
             </span>
-            {!monitoring ? (
-              <button className="btn" onClick={startMonitoring} disabled={modelState === "loading"}>
-                <Camera size={16} /> {modelState === "loading" ? "Starting…" : "Enable monitoring"}
-              </button>
-            ) : (
-              <button className="btn danger" onClick={stopMonitoring}><CameraOff size={16} /> Stop monitoring</button>
-            )}
+            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+              {!monitoring ? (
+                <button className="btn" onClick={startMonitoring} disabled={modelState === "loading"}>
+                  <Camera size={16} /> {modelState === "loading" ? "Starting…" : "Enable monitoring"}
+                </button>
+              ) : (
+                <button className="btn danger" onClick={stopMonitoring}><CameraOff size={16} /> Stop monitoring</button>
+              )}
+              <button className="btn danger" onClick={sos} title="Immediately alert your Primary Carer">🆘 SOS</button>
+            </div>
           </div>
 
           <div className="monitor-stage">
