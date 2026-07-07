@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import { api } from "../api/client.js";
@@ -140,6 +141,14 @@ export default function CaregiverDashboard() {
   const apptDates = overview?.upcoming_appointments?.map((a) => a.when) || [];
   const urgentCount = notifs.filter((n) => n.urgent).length;
   const status = statusFromOverview(overview, urgentCount);
+  // Visualizations derived from the same overview data (no new data fetched).
+  const painData = (overview?.recent_symptoms || [])
+    .filter((s) => s.pain_level != null)
+    .slice()
+    .reverse()
+    .map((s, idx) => ({ i: idx + 1, pain: s.pain_level }));
+  const adherencePct = Math.round((overview?.adherence_rate ?? 0) * 100);
+  const adherenceFill = adherencePct >= 85 ? "#22c55e" : adherencePct >= 70 ? "#f59e0b" : "#ef4444";
 
   return (
     <div className="grid" style={{ gap: 20 }}>
@@ -275,6 +284,49 @@ export default function CaregiverDashboard() {
                   <StatCard icon="📅" value={overview.upcoming_appointments.length} label="Upcoming visits" accent="#06b6d4" />
                 )}
               </div>
+              {"adherence_rate" in overview && (
+                <div className="grid cols-2">
+                  <div className="card">
+                    <h3 className="card-title">Medication adherence</h3>
+                    <p className="card-sub">Doses taken as prescribed</p>
+                    <div style={{ position: "relative", width: "100%", maxWidth: 240, margin: "0 auto" }}>
+                      <ResponsiveContainer width="100%" height={190}>
+                        <RadialBarChart innerRadius="72%" outerRadius="100%" data={[{ name: "Adherence", value: adherencePct }]} startAngle={90} endAngle={-270}>
+                          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                          <RadialBar dataKey="value" cornerRadius={12} background fill={adherenceFill} />
+                        </RadialBarChart>
+                      </ResponsiveContainer>
+                      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", pointerEvents: "none" }}>
+                        <div style={{ fontSize: "1.9rem", fontWeight: 800 }}>{adherencePct}%</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="card">
+                    <h3 className="card-title">Pain trend</h3>
+                    <p className="card-sub">Recent check-ins · watch the line, not one number</p>
+                    {painData.length === 0 ? (
+                      <EmptyState icon="📈" title="No pain logged yet" />
+                    ) : (
+                      <ResponsiveContainer width="100%" height={190}>
+                        <AreaChart data={painData} margin={{ top: 10, right: 12, left: -24, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="painFill" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#ef4444" stopOpacity={0.35} />
+                              <stop offset="100%" stopColor="#ef4444" stopOpacity={0.02} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis dataKey="i" tick={{ fontSize: 11 }} stroke="#e2e8f0" />
+                          <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} stroke="#e2e8f0" />
+                          <Tooltip formatter={(v) => [`${v}/10`, "Pain"]} labelFormatter={(l) => `Check-in ${l}`} contentStyle={{ borderRadius: 12, border: "none" }} />
+                          <ReferenceLine y={7} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: "watch", fontSize: 10, fill: "#f59e0b", position: "insideTopRight" }} />
+                          <Area type="monotone" dataKey="pain" stroke="#ef4444" strokeWidth={2.5} fill="url(#painFill)" dot={{ r: 3 }} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+              )}
               {overview.recent_symptoms && (
                 <div className="card">
                   <h3 className="card-title">Recent symptoms</h3>

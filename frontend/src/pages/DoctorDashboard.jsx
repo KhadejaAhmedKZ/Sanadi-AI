@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line, ScatterChart, Scatter, ZAxis, RadialBarChart, RadialBar, PolarAngleAxis, Area, AreaChart } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
@@ -256,6 +256,21 @@ export default function DoctorDashboard() {
       { name: "Watch", value: patients.filter((p) => p.risk_level === "watch").length, fill: "#f59e0b" },
       { name: "High", value: patients.filter((p) => p.risk_level === "high").length, fill: "#ef4444" },
     ];
+    const LEVEL_FILL = { high: "#ef4444", watch: "#f59e0b", stable: "#22c55e" };
+    const scatterData = patients.map((p) => ({
+      adherence: Math.round((p.adherence_rate ?? 0) * 100),
+      risk: p.risk_score ?? 0,
+      name: p.name.split(" ")[0],
+      fill: LEVEL_FILL[p.risk_level] || LEVEL_FILL.stable,
+    }));
+    const deptData = Object.values(
+      queue.reduce((acc, a) => {
+        const d = a.department || "General";
+        acc[d] = acc[d] || { department: d, video: 0, "in-person": 0 };
+        if (a.is_video) acc[d].video += 1; else acc[d]["in-person"] += 1;
+        return acc;
+      }, {})
+    );
     return (
       <div className="grid" style={{ gap: 22 }}>
         <div className="page-head"><h1>📊 Population Analytics</h1><p>Panel-wide adherence and risk. Synthetic demo data.</p></div>
@@ -313,6 +328,43 @@ export default function DoctorDashboard() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+        </div>
+        <div className="grid cols-2">
+          <div className="card">
+            <h3 className="card-title">Adherence vs risk</h3>
+            <p className="card-sub">Each dot is a patient — lower adherence tends to mean higher risk</p>
+            {scatterData.length === 0 ? <EmptyState icon="🔬" title="No patients yet" /> : (
+              <ResponsiveContainer width="100%" height={240}>
+                <ScatterChart margin={{ top: 10, right: 16, left: -18, bottom: 6 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                  <XAxis type="number" dataKey="adherence" name="Adherence" unit="%" domain={[0, 100]} tick={{ fontSize: 11 }} stroke={gridColor} />
+                  <YAxis type="number" dataKey="risk" name="Risk" domain={[0, 100]} tick={{ fontSize: 11 }} stroke={gridColor} />
+                  <ZAxis range={[90, 90]} />
+                  <Tooltip cursor={{ strokeDasharray: "3 3" }} formatter={(v, n) => [n === "Adherence" ? `${v}%` : v, n]} labelFormatter={() => ""} contentStyle={{ borderRadius: 12, border: "none" }} />
+                  <Scatter data={scatterData}>
+                    {scatterData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                  </Scatter>
+                </ScatterChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div className="card">
+            <h3 className="card-title">Appointment load by department</h3>
+            <p className="card-sub">Next 14 days — video vs in-person</p>
+            {deptData.length === 0 ? <EmptyState icon="📅" title="Nothing scheduled" /> : (
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={deptData} margin={{ top: 10, right: 12, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                  <XAxis dataKey="department" tick={{ fontSize: 11 }} stroke={gridColor} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke={gridColor} />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: "none" }} />
+                  <Legend />
+                  <Bar dataKey="video" stackId="a" fill="#2563eb" name="Video" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="in-person" stackId="a" fill="#14b8a6" name="In-person" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
         {population?.high_risk_patients?.length > 0 && (
           <div className="card" style={{ background: "var(--danger-100)", borderColor: "var(--danger)" }}>
@@ -487,6 +539,21 @@ export default function DoctorDashboard() {
                         </BarChart>
                       </ResponsiveContainer>
                     )}
+                  </div>
+                  <div className="card">
+                    <h3 className="card-title">Overall adherence</h3>
+                    <p className="card-sub">Share of doses taken as prescribed</p>
+                    <div style={{ position: "relative", width: "100%", maxWidth: 260, margin: "0 auto" }}>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <RadialBarChart innerRadius="72%" outerRadius="100%" data={[{ name: "Adherence", value: Math.round((analytics?.adherence_rate ?? 0) * 100) }]} startAngle={90} endAngle={-270}>
+                          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                          <RadialBar dataKey="value" cornerRadius={12} background fill={(analytics?.adherence_rate ?? 0) >= 0.85 ? "#22c55e" : (analytics?.adherence_rate ?? 0) >= 0.7 ? "#f59e0b" : "#ef4444"} />
+                        </RadialBarChart>
+                      </ResponsiveContainer>
+                      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", pointerEvents: "none" }}>
+                        <div style={{ fontSize: "2rem", fontWeight: 800 }}>{Math.round((analytics?.adherence_rate ?? 0) * 100)}%</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
