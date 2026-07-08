@@ -410,10 +410,14 @@
 .bm-face circle { fill: color-mix(in srgb, var(--bm-skin-lo) 35%, #4a3426); }
 .bm-face path { stroke: color-mix(in srgb, var(--bm-skin-lo) 35%, #4a3426); stroke-width: 1.1; }
 .bm-spine { stroke: var(--border); stroke-width: 2.5; stroke-dasharray: 3 5; stroke-linecap: round; }
-.bm-hotspot { cursor: pointer; }
+.bm-hotspot { cursor: pointer; transition: transform .18s cubic-bezier(.34, 1.56, .64, 1); transform-box: fill-box; transform-origin: center; }
+.bm-hotspot:hover { transform: scale(1.22); }
 .bm-hotspot:hover circle:last-child { opacity: 1; stroke: var(--accent); stroke-width: 2; }
 .bm-pulse { animation: bm-pulse 1.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
 @keyframes bm-pulse { 0%,100% { opacity: .15; } 50% { opacity: .45; } }
+/* pulsing halo around the currently selected region */
+.bm-sel-glow { animation: bm-sel 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes bm-sel { 0%,100% { opacity: .16; transform: scale(.9); } 50% { opacity: .4; transform: scale(1.15); } }
 .bm-recent-row {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
   background: none; border: none; padding: 7px 4px; border-radius: 10px; cursor: pointer;

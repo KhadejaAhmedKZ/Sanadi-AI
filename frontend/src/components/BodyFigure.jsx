@@ -152,16 +152,25 @@ export default function BodyFigure({ side = "front", sex = "female", latest = {}
   return (
     <svg viewBox="0 0 220 425" className="body-figure" role="group" aria-label={`Body map, ${sex} figure, ${side} view`}>
       <defs>
-        <radialGradient id="bm-skin" cx="50%" cy="35%" r="75%">
+        <radialGradient id="bm-skin" cx="44%" cy="28%" r="82%">
           <stop offset="0%" stopColor="var(--bm-skin-hi)" />
           <stop offset="100%" stopColor="var(--bm-skin-lo)" />
+        </radialGradient>
+        {/* soft top-left highlight for a polished, medical-illustration finish */}
+        <radialGradient id="bm-sheen" cx="42%" cy="24%" r="70%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
+          <stop offset="55%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
         <filter id="bm-glow" x="-80%" y="-80%" width="260%" height="260%">
           <feGaussianBlur stdDeviation="5" />
         </filter>
+        {/* gentle depth shadow beneath the figure */}
+        <filter id="bm-shadow" x="-30%" y="-12%" width="160%" height="132%">
+          <feDropShadow dx="0" dy="6" stdDeviation="7" floodColor="#0b1a2f" floodOpacity="0.15" />
+        </filter>
       </defs>
 
-      <g className="bm-body">
+      <g className="bm-body" filter="url(#bm-shadow)">
         <path d={BODY_PATHS[sex]} fill="url(#bm-skin)" />
         {side === "back" && <path className="bm-spine" d="M110,74 L110,200" fill="none" />}
         <Contours sex={sex} side={side} />
@@ -173,6 +182,9 @@ export default function BodyFigure({ side = "front", sex = "female", latest = {}
           </g>
         )}
       </g>
+
+      {/* soft sheen over the torso — sits above the body, below the markers */}
+      <ellipse cx="98" cy="150" rx="66" ry="150" fill="url(#bm-sheen)" style={{ pointerEvents: "none" }} />
 
       {regions.map(({ region, cx, cy }) => {
         const entry = latest[region];
@@ -193,7 +205,7 @@ export default function BodyFigure({ side = "front", sex = "female", latest = {}
             {/* Invisible hit target keeps small dots easy to tap despite the dense layout. */}
             <circle cx={cx} cy={cy} r="9" fill="transparent" />
             {severe && <circle cx={cx} cy={cy} r="12" fill={color} opacity="0.45" filter="url(#bm-glow)" className="bm-pulse" />}
-            {isSel && <circle cx={cx} cy={cy} r="13" fill="var(--accent)" opacity="0.28" filter="url(#bm-glow)" />}
+            {isSel && <circle cx={cx} cy={cy} r="13" fill="var(--accent)" opacity="0.28" filter="url(#bm-glow)" className="bm-sel-glow" />}
             {isSel && <circle cx={cx} cy={cy} r="9.5" fill="none" stroke="var(--accent)" strokeWidth="2.2" />}
             <circle
               cx={cx}
