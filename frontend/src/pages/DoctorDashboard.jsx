@@ -53,6 +53,7 @@ export default function DoctorDashboard() {
   const [bodySide, setBodySide] = useState("front");
   const [bodySex, setBodySex] = useState("female");
   const [bodyRegion, setBodyRegion] = useState(null);
+  const [market, setMarket] = useState({ bookings: [], deliveries: [] });
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -103,6 +104,9 @@ export default function DoctorDashboard() {
     api.labs(patient.id).then(setLabs).catch(() => setLabs([]));
     setBodyRegion(null);
     api.bodyAssessments(patient.id).then(setBodyMap).catch(() => setBodyMap({ latest: {}, history: [] }));
+    setMarket({ bookings: [], deliveries: [] });
+    api.bookings(patient.id).then((bookings) => setMarket((m) => ({ ...m, bookings }))).catch(() => {});
+    api.deliveries(patient.id).then((deliveries) => setMarket((m) => ({ ...m, deliveries }))).catch(() => {});
     try {
       const res = await api.aiSummary(patient.id);
       setSummary({ patient, text: res.summary });
@@ -479,6 +483,7 @@ export default function DoctorDashboard() {
                 <button className={"tab" + (detailTab === "body" ? " active" : "")} onClick={() => setDetailTab("body")}>🧍 Body Map</button>
                 <button className={"tab" + (detailTab === "notes" ? " active" : "")} onClick={() => setDetailTab("notes")}>📝 Clinical Notes</button>
                 <button className={"tab" + (detailTab === "schedule" ? " active" : "")} onClick={() => setDetailTab("schedule")}>📅 Schedule</button>
+                <button className={"tab" + (detailTab === "market" ? " active" : "")} onClick={() => setDetailTab("market")}>🏠 Home Care</button>
               </div>
 
               {detailTab === "summary" && (
@@ -737,6 +742,49 @@ export default function DoctorDashboard() {
                       </div>
                     ))
                   )}
+                </div>
+              )}
+
+              {detailTab === "market" && (
+                <div className="grid" style={{ gap: 20 }}>
+                  <div className="card">
+                    <h3 className="card-title">🏠 External treatments</h3>
+                    <p className="card-sub">Out-of-hospital care booked for {selectedPatient.name}</p>
+                    {market.bookings.length === 0 ? (
+                      <EmptyState icon="🗓️" title="No external bookings" />
+                    ) : market.bookings.map((b) => (
+                      <div className="list-row" key={b.id}>
+                        <div className="lead">
+                          <div className="dot">🏠</div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: ".9rem" }}>{b.service_type} · {b.provider}</div>
+                            <div className="muted" style={{ fontSize: ".78rem" }}>
+                              {new Date(b.scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · {b.location}
+                            </div>
+                          </div>
+                        </div>
+                        <span className={"badge " + (b.status === "confirmed" ? "green" : b.status === "cancelled" ? "red" : "gray")}>{b.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="card">
+                    <h3 className="card-title">🚚 Medication deliveries</h3>
+                    <p className="card-sub">Home-delivery status for prescribed medications</p>
+                    {market.deliveries.length === 0 ? (
+                      <EmptyState icon="📦" title="No deliveries" />
+                    ) : market.deliveries.map((d) => (
+                      <div className="list-row" key={d.id}>
+                        <div className="lead">
+                          <div className="dot">💊</div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: ".9rem" }}>{d.medication_name}</div>
+                            <div className="muted" style={{ fontSize: ".78rem" }}>{d.pharmacy} · {d.tracking_code}</div>
+                          </div>
+                        </div>
+                        <span className={"badge " + (d.status === "delivered" ? "green" : d.status === "cancelled" ? "red" : "amber")}>{d.status_label || d.status}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </motion.div>

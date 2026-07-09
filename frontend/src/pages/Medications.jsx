@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import { api } from "../api/client.js";
@@ -8,6 +9,7 @@ import { SkeletonList } from "../components/Skeleton.jsx";
 export default function Medications() {
   const { user } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
   const patientId = user.id;
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +90,19 @@ export default function Medications() {
                 <div className="row">
                   <button className="btn success sm" onClick={() => takeDose(m, true)}>Taken</button>
                   <button className="btn secondary sm" onClick={() => takeDose(m, false)}>Missed</button>
+                  <button
+                    className="btn ghost sm"
+                    title="Request home delivery of this medication"
+                    onClick={async () => {
+                      try {
+                        await api.createDelivery({ patient_id: patientId, medication_id: m.id, created_by: "patient" });
+                        toast.success(`Delivery requested for ${m.name}`);
+                        navigate("/deliveries");
+                      } catch (e) { toast.error(e.message); }
+                    }}
+                  >
+                    🚚 Deliver
+                  </button>
                 </div>
               </div>
             ))

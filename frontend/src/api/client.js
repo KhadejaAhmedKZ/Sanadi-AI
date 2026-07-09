@@ -68,6 +68,19 @@ export const api = {
       body: { patient_id, action, department, reason },
     }),
 
+  // Care marketplace — outside-hospital treatment booking + medication delivery
+  careProviders: (service_type) =>
+    request(`/care-market/providers${service_type ? `?service_type=${encodeURIComponent(service_type)}` : ""}`),
+  bookings: (pid) => request(`/care-market/patients/${pid}/bookings`),
+  createBooking: (payload) => request("/care-market/bookings", { method: "POST", body: payload }),
+  rescheduleBooking: (id, scheduled_for) =>
+    request(`/care-market/bookings/${id}/reschedule`, { method: "POST", body: { scheduled_for } }),
+  cancelBooking: (id) => request(`/care-market/bookings/${id}/cancel`, { method: "POST" }),
+  deliveries: (pid) => request(`/care-market/patients/${pid}/deliveries`),
+  createDelivery: (payload) => request("/care-market/deliveries", { method: "POST", body: payload }),
+  advanceDelivery: (id) => request(`/care-market/deliveries/${id}/advance`, { method: "POST" }),
+  cancelDelivery: (id) => request(`/care-market/deliveries/${id}/cancel`, { method: "POST" }),
+
   chatWithImage: async (patient_id, file, message) => {
     const form = new FormData();
     form.append("patient_id", patient_id);

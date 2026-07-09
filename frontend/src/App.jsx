@@ -7,6 +7,8 @@ import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
 import Chat from "./pages/Chat.jsx";
 import CareCoordinator from "./pages/CareCoordinator.jsx";
+import HomeCare from "./pages/HomeCare.jsx";
+import Deliveries from "./pages/Deliveries.jsx";
 import PatientDashboard from "./pages/PatientDashboard.jsx";
 import Appointments from "./pages/Appointments.jsx";
 import Medications from "./pages/Medications.jsx";
@@ -76,6 +78,9 @@ export default function App() {
         {/* Patient-only sections */}
         <Route path="/chat" element={<Chat />} />
         <Route path="/coordinator" element={<RequireRole role="patient"><CareCoordinator /></RequireRole>} />
+        {/* Care marketplace — used by patients and caregivers */}
+        <Route path="/home-care" element={<HomeCare />} />
+        <Route path="/deliveries" element={<Deliveries />} />
         <Route path="/dashboard" element={<RequireRole role="patient"><PatientDashboard /></RequireRole>} />
         <Route path="/appointments" element={<RequireRole role="patient"><Appointments /></RequireRole>} />
         <Route path="/medications" element={<RequireRole role="patient"><Medications /></RequireRole>} />

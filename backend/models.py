@@ -266,3 +266,57 @@ class Notification(Base):
     urgent: Mapped[bool] = mapped_column(Boolean, default=False)
     read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class BookingStatus(str, enum.Enum):
+    requested = "requested"
+    confirmed = "confirmed"
+    completed = "completed"
+    cancelled = "cancelled"
+
+
+class ExternalBooking(Base):
+    """A treatment / therapy / home-care booking with an out-of-hospital provider."""
+
+    __tablename__ = "external_bookings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    service_type: Mapped[str] = mapped_column(String(80))
+    provider: Mapped[str] = mapped_column(String(160))
+    location: Mapped[str] = mapped_column(String(200), default="")
+    price: Mapped[str] = mapped_column(String(60), default="")
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime)
+    status: Mapped[BookingStatus] = mapped_column(Enum(BookingStatus), default=BookingStatus.confirmed)
+    notes: Mapped[str] = mapped_column(String(300), default="")
+    appointment_id: Mapped[int | None] = mapped_column(ForeignKey("appointments.id"), nullable=True)
+    created_by: Mapped[str] = mapped_column(String(24), default="patient")  # patient | caregiver
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class DeliveryStatus(str, enum.Enum):
+    requested = "requested"
+    confirmed = "confirmed"
+    dispatched = "dispatched"
+    out_for_delivery = "out_for_delivery"
+    delivered = "delivered"
+    cancelled = "cancelled"
+
+
+class MedicationDelivery(Base):
+    """A home-delivery request for a prescribed medication."""
+
+    __tablename__ = "medication_deliveries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    medication_id: Mapped[int | None] = mapped_column(ForeignKey("medications.id"), nullable=True)
+    medication_name: Mapped[str] = mapped_column(String(200))
+    pharmacy: Mapped[str] = mapped_column(String(160), default="")
+    address: Mapped[str] = mapped_column(String(200), default="")
+    status: Mapped[DeliveryStatus] = mapped_column(Enum(DeliveryStatus), default=DeliveryStatus.requested)
+    eta: Mapped[str] = mapped_column(String(80), default="")
+    tracking_code: Mapped[str] = mapped_column(String(40), default="")
+    created_by: Mapped[str] = mapped_column(String(24), default="patient")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

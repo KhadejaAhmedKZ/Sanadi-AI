@@ -7,7 +7,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from backend.database import SessionLocal, init_db
-from backend.models import Appointment, BodyAssessment, LabResult, Meal, MedicationLog, RehabSession, SymptomLog, User, UserRole
+from backend.models import (
+    Appointment, BodyAssessment, BookingStatus, DeliveryStatus, ExternalBooking,
+    LabResult, Meal, MedicationDelivery, MedicationLog, RehabSession, SymptomLog, User, UserRole,
+)
 from backend.services import medication_service, patient_service
 from backend.utils.security import hash_password
 
@@ -169,6 +172,37 @@ def _seed_labs_and_video(db, patient: User) -> None:
     db.commit()
 
 
+def _seed_market(db, patient: User) -> None:
+    """A demo external booking + in-progress medication delivery for the marketplace."""
+    if patient.email != "sara@example.com":
+        return
+    when = (datetime.utcnow() + timedelta(days=2, hours=3)).replace(minute=0, second=0, microsecond=0)
+    appt = Appointment(
+        patient_id=patient.id, department="Physiotherapy",
+        reason="MoveWell Physiotherapy · Jumeirah, Dubai", scheduled_for=when,
+    )
+    db.add(appt)
+    db.commit()
+    db.refresh(appt)
+    db.add(ExternalBooking(
+        patient_id=patient.id, service_type="Physiotherapy", provider="MoveWell Physiotherapy",
+        location="Jumeirah, Dubai", price="AED 220 / session", scheduled_for=when,
+        status=BookingStatus.confirmed, notes="Knee rehab follow-up",
+        appointment_id=appt.id, created_by="caregiver",
+    ))
+    meds = medication_service.list_medications(db, patient.id)
+    med = meds[0] if meds else None
+    med_name = (med.name + (f" ({med.dosage})" if med.dosage else "")) if med else "Ibuprofen 400mg"
+    db.add(MedicationDelivery(
+        patient_id=patient.id, medication_id=(med.id if med else None), medication_name=med_name,
+        pharmacy="Sanadi Partner Pharmacy", address="Villa 12, Jumeirah 1, Dubai",
+        status=DeliveryStatus.out_for_delivery,
+        eta=(datetime.utcnow() + timedelta(minutes=20)).strftime("Today, %H:%M"),
+        tracking_code="SND-4471209", created_by="patient",
+    ))
+    db.commit()
+
+
 def _seed_history(db, patient: User) -> None:
     spec = HISTORY.get(patient.email)
     if not spec:
@@ -255,6 +289,7 @@ def seed() -> None:
             _seed_labs_and_video(db, patient)
             _seed_body_maps(db, patient)
             _seed_meals(db, patient)
+            _seed_market(db, patient)
             print(f"✓ Seeded patient {patient.name} (id={patient.id})")
 
         _seed_staff(db)

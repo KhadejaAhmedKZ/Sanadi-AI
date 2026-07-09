@@ -26,6 +26,8 @@ import {
   Sparkles,
   Bell,
   BookOpen,
+  Truck,
+  HeartHandshake,
 } from "lucide-react";
 
 export const NAV = {
@@ -51,6 +53,8 @@ export const NAV = {
       label: "Care Modules",
       items: [
         { to: "/care", icon: HeartPulse, label: "Specialized Care" },
+        { to: "/home-care", icon: HeartHandshake, label: "Home & Outside Care" },
+        { to: "/deliveries", icon: Truck, label: "Medication Delivery" },
         { to: "/care/rehabilitation", icon: Glasses, label: "VR Rehab" },
         { to: "/learn", icon: GraduationCap, label: "Learning Hub" },
       ],
@@ -72,6 +76,8 @@ export const NAV = {
         { to: "/caregiver/alerts", icon: Bell, label: "Safety Alerts" },
         { to: "/caregiver/understand", icon: BookOpen, label: "Understand" },
         { to: "/caregiver/calendar", icon: CalendarDays, label: "Calendar & Routine" },
+        { to: "/home-care", icon: HeartHandshake, label: "Book Home Care" },
+        { to: "/deliveries", icon: Truck, label: "Medication Delivery" },
       ],
     },
   ],
