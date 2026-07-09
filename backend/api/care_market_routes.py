@@ -30,26 +30,37 @@ from backend.services import appointment_service, notification_service, patient_
 router = APIRouter(prefix="/care-market", tags=["care-market"])
 
 # ---------------------------------------------------------------- provider catalog
-# Fictional out-of-hospital providers (UAE context, prices in AED).
+# Fictional out-of-hospital providers — UAE plus international destinations.
 PROVIDERS: dict[str, list[dict]] = {
     "Physiotherapy": [
-        {"name": "MoveWell Physiotherapy", "location": "Jumeirah, Dubai", "price": "AED 220 / session"},
-        {"name": "Sanad Rehab Clinic", "location": "Al Barsha, Dubai", "price": "AED 180 / session"},
+        {"name": "MoveWell Physiotherapy", "location": "Jumeirah, Dubai", "country": "UAE", "price": "AED 220 / session"},
+        {"name": "Sanad Rehab Clinic", "location": "Al Barsha, Dubai", "country": "UAE", "price": "AED 180 / session"},
+        {"name": "Riyadh Physio Center", "location": "Riyadh, Saudi Arabia", "country": "Saudi Arabia", "price": "SAR 250 / session"},
+        {"name": "London Physio Clinic", "location": "London, United Kingdom", "country": "United Kingdom", "price": "£75 / session"},
     ],
     "Home Nursing": [
-        {"name": "CareAtHome Nursing", "location": "Home visit", "price": "AED 250 / visit"},
-        {"name": "Noor Home Health", "location": "Home visit", "price": "AED 300 / visit"},
+        {"name": "CareAtHome Nursing", "location": "Home visit · Dubai", "country": "UAE", "price": "AED 250 / visit"},
+        {"name": "Noor Home Health", "location": "Home visit · Abu Dhabi", "country": "UAE", "price": "AED 300 / visit"},
+        {"name": "Doha Home Care", "location": "Home visit · Doha, Qatar", "country": "Qatar", "price": "QAR 300 / visit"},
+        {"name": "Apollo HomeCare", "location": "Home visit · Chennai, India", "country": "India", "price": "₹1,200 / visit"},
     ],
     "Rehabilitation": [
-        {"name": "Rehab First Center", "location": "Dubai Healthcare City", "price": "AED 400 / session"},
-        {"name": "Recover+ Therapy", "location": "Al Nahda, Sharjah", "price": "AED 320 / session"},
+        {"name": "Rehab First Center", "location": "Dubai Healthcare City", "country": "UAE", "price": "AED 400 / session"},
+        {"name": "Recover+ Therapy", "location": "Al Nahda, Sharjah", "country": "UAE", "price": "AED 320 / session"},
+        {"name": "NeuroRehab Istanbul", "location": "Istanbul, Türkiye", "country": "Türkiye", "price": "€180 / session"},
+        {"name": "Schön Klinik Rehab", "location": "Munich, Germany", "country": "Germany", "price": "€260 / session"},
     ],
     "Specialist Consultation": [
-        {"name": "Dubai Ortho & Sports", "location": "Dubai Healthcare City", "price": "AED 500 / consult"},
-        {"name": "NeuroCare Clinic", "location": "Al Reem, Abu Dhabi", "price": "AED 600 / consult"},
+        {"name": "Dubai Ortho & Sports", "location": "Dubai Healthcare City", "country": "UAE", "price": "AED 500 / consult"},
+        {"name": "NeuroCare Clinic", "location": "Al Reem, Abu Dhabi", "country": "UAE", "price": "AED 600 / consult"},
+        {"name": "Harley Street Specialists", "location": "London, United Kingdom", "country": "United Kingdom", "price": "£250 / consult"},
+        {"name": "Apollo Hospitals", "location": "New Delhi, India", "country": "India", "price": "₹2,500 / consult"},
+        {"name": "Acıbadem Clinic", "location": "Istanbul, Türkiye", "country": "Türkiye", "price": "€200 / consult"},
     ],
     "Home Lab / Diagnostics": [
-        {"name": "HomeLab Diagnostics", "location": "Home sample collection", "price": "AED 150 + tests"},
+        {"name": "HomeLab Diagnostics", "location": "Home sample · Dubai", "country": "UAE", "price": "AED 150 + tests"},
+        {"name": "GlobalLab", "location": "Home sample · Riyadh, Saudi Arabia", "country": "Saudi Arabia", "price": "SAR 180 + tests"},
+        {"name": "Thyrocare Home", "location": "Home sample · Mumbai, India", "country": "India", "price": "₹900 + tests"},
     ],
 }
 
